@@ -161,3 +161,6 @@ cython_debug/
 
 # nixos-shell
 nixos.qcow2
+
+# nix-build
+result
