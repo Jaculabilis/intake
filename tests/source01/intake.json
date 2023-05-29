@@ -1,0 +1,9 @@
+{
+  "fetch": {
+    "exe": "python3",
+    "args": ["update.py"]
+  },
+  "env": {
+    "HELLO": "WORLD"
+  }
+}
