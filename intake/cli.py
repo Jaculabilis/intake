@@ -4,7 +4,7 @@ import os
 import os.path
 import sys
 
-from .source import fetch_items
+from .source import fetch_items, LocalSource, update_items
 from .types import InvalidConfigException, SourceUpdateException
 
 
@@ -15,11 +15,11 @@ def intake_data_dir() -> Path:
     return intake_data
 
 
-def cmd_fetch(cmd_args):
-    """Execute the fetch for a source."""
+def cmd_update(cmd_args):
+    """Fetch items for a source and update it."""
     parser = argparse.ArgumentParser(
-        prog="intake fetch",
-        description=cmd_fetch.__doc__,
+        prog="intake update",
+        description=cmd_update.__doc__,
     )
     parser.add_argument(
         "--base",
@@ -30,14 +30,22 @@ def cmd_fetch(cmd_args):
         "--source",
         help="Source name to fetch",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Instead of updating the source, print the fetched items"
+    )
     args = parser.parse_args(cmd_args)
     ret = 0
 
-    source_path = Path(args.base) / args.source
+    source = LocalSource(Path(args.base), args.source)
     try:
-        items = fetch_items(source_path)
-        for item in items:
-            print("Item:", item)
+        items = fetch_items(source)
+        if not args.dry_run:
+            update_items(source, items)
+        else:
+            for item in items:
+                print("Item:", item)
     except InvalidConfigException as ex:
         print("Could not fetch", args.source)
         print(ex)
