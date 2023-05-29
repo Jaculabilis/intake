@@ -1,8 +1,12 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  intake = import ./default.nix {};
-in pkgs.mkShell {
-  inputsFrom = [ intake ];
-  buildInputs = [ pkgs.nixos-shell ];
-}
+  extraDeps = [
+    pkgs.nixos-shell
+    pkgs.python38Packages.black
+    pkgs.python38Packages.pytest
+  ];
+  intake = import ./default.nix {
+    inherit pkgs extraDeps;
+  };
+in intake
