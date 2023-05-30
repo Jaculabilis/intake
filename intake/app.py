@@ -57,15 +57,23 @@ def source_feed(source_name):
     Feed view for a single source.
     """
     source = LocalSource(intake_data_dir(), source_name)
+    if not source.source_path.exists():
+        abort(404)
 
     # Get all items
-    # TODO: support paging parameters
-    all_items = list(source.get_all_items())
-    all_items.sort(key=item_sort_key)
+    all_items = source.get_all_items()
+    sorted_items = sorted(all_items, key=item_sort_key)
+
+    if count_arg := request.args.get("count"):
+        page_arg = request.args.get("page", "0")
+        if count_arg.isdigit() and page_arg.isdigit():
+            count = int(count_arg)
+            page = int(page_arg)
+            sorted_items = sorted_items[count * page:count * page + count]
 
     return render_template(
         "feed.jinja2",
-        items=all_items,
+        items=sorted_items,
         now=int(time.time()),
         mdeac=[
             {"source": item["source"], "itemid": item["id"]}
