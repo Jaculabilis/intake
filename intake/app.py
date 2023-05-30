@@ -66,6 +66,7 @@ def source_feed(source_name):
     return render_template(
         "feed.jinja2",
         items=all_items,
+        now=int(time.time()),
         mdeac=[
             {"source": item["source"], "itemid": item["id"]}
             for item in all_items

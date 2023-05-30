@@ -116,10 +116,9 @@ var callback = function (source, itemid) {
 </head>
 <body>
 <div id="wrapper">
-{#  #}
 {% if items %}
 {% for item in items %}
-	<div class="readable-item" id="{{item.source}}-{{item.id}}">
+	<div class="readable-item {%- if not item.active %} strikethru fade{% endif %}{%- if item.active and item.tts and item.created + item.tts > now %} fade{% endif %}" id="{{item.source}}-{{item.id}}">
 	{% if item.id %}
 	<button class="item-button" onclick="javascript:deactivate('{{item.source}}', '{{item.id}}')" title="Deactivate">&#10005;</button>
 	{% endif %}
