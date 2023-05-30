@@ -164,3 +164,6 @@ nixos.qcow2
 
 # nix-build
 result
+
+# test sources
+tests/**/*.item

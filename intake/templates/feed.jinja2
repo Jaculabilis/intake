@@ -1,0 +1,193 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake{% if items %} ({{ items|length - 1 }}){% endif %}</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
+<style>
+div#wrapper {
+	max-width: 700px;
+	margin: 0 auto;
+}
+.readable-item {
+	border: 1px solid black; border-radius: 6px;
+	padding: 5px;
+	margin-bottom: 20px;
+	word-break: break-word;
+}
+.item-title {
+	font-size: 1.4em;
+}
+.item-button {
+	font-size: 1em;
+	float:right;
+	margin-left: 2px;
+}
+.item-link {
+	text-decoration: none;
+	float:right;
+	font-size: 1em;
+	padding: 2px 7px;
+	border: 1px solid;
+	border-radius: 2px;
+}
+.item-info {
+	color: rgba(0, 0, 0, 0.7);
+}
+.readable-item img {
+	max-width: 100%;
+}
+button, summary {
+	cursor: pointer;
+}
+summary {
+	display: block;
+}
+summary:focus {
+	outline: 1px dotted gray;
+}
+.strikethru span, .strikethru p {
+	text-decoration: line-through;
+}
+.fade span, .fade p {
+	color: rgba(0, 0, 0, 0.2);
+}
+pre {
+	white-space: pre-wrap;
+}
+table.feed-control td {
+	font-family: monospace; padding: 5px 10px;
+}
+</style>
+<script>
+var deactivate = function (source, itemid) {
+	fetch('/deactivate/', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json; charset=UTF-8',
+		},
+		body: JSON.stringify({source: source, itemid: itemid}),
+	})
+	.then(response => response.json())
+	.then(function (data) {
+		if (!data.active) {
+			document.getElementById(source + "-" + itemid)
+				.classList.add("strikethru", "fade");
+		}
+	});
+};
+var punt = function (source, itemid) {
+	fetch('/punt/', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json; charset=UTF-8',
+		},
+		body: JSON.stringify({source: source, itemid: itemid}),
+	})
+	.then(response => response.json())
+	.then(function (data) {
+		if (data.tts) {
+			document.getElementById(source + "-" + itemid)
+				.classList.add("fade");
+		}
+	});
+};
+var mdeactivate = function (items) {
+	fetch('/mass-deactivate/', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json; charset=UTF-8',
+		},
+		body: JSON.stringify({items: items}),
+	})
+	.then(function () {
+		location.reload();
+	});
+};
+var callback = function (source, itemid) {
+	document.getElementById(source + "-" + itemid + "-callback").disabled = true;
+	fetch('/callback/', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json; charset=UTF-8',
+		},
+		body: JSON.stringify({source: source, itemid: itemid}),
+	})
+	.then(function (data) {
+		location.reload()
+	});
+};
+</script>
+</head>
+<body>
+<div id="wrapper">
+{#  #}
+{% if items %}
+{% for item in items %}
+	<div class="readable-item" id="{{item.source}}-{{item.id}}">
+	{% if item.id %}
+	<button class="item-button" onclick="javascript:deactivate('{{item.source}}', '{{item.id}}')" title="Deactivate">&#10005;</button>
+	{% endif %}
+	{% if item.id %}
+	<button class="item-button" onclick="javascript:punt('{{item.source}}', '{{item.id}}')" title="Punt to tomorrow">&#8631;</button>
+	{% endif %}
+	{% if item.link %}
+	<a class="item-link" href="{{item.link}}" target="_blank">&#8663;</a>
+	{% endif %}
+
+	{# The item title is a clickable <summary> if there is body content #}
+	{% if item.body or item.callback %}
+	<details>
+	<summary><span class="item-title">{{item.title}}</span></summary>
+	{% if item.body %}
+	<p>{{item.body|safe}}</p>
+	{% endif %}
+	{% if item.callback %}
+	<p><button id="{{item.source}}-{{item.id}}-callback" onclick="javascript:callback('{{item.source}}', '{{item.id}}')">Callback</button></p>
+	{% endif %}
+	</details>
+	{% else %}
+	<span class="item-title">{{item.title}}</span><br>
+	{% endif %}
+
+	{# author/time footer line #}
+	{% if item.author or item.time %}
+	<span class="item-info">
+	{% if item.author %}{{item.author}}{% endif %}
+	{% if item.time %}{{item.time|datetimeformat}}{% endif %}
+	</span><br>
+	{% endif %}
+
+	{# source/id/created footer line #}
+	{% if item.source or item.id or item.created %}
+	<span class="item-info" title="{{ 'Tags: {}'.format(', '.join(item.tags)) }}">
+	{% if item.source %}{{item.source}}{% endif %}
+	{% if item.id %}{{item.id}}{% endif %}
+	{% if item.created %}{{item.created|datetimeformat}}{% endif %}
+	{% if item.ttl %}L{% endif %}{% if item.ttd %}D{% endif %}{% if item.tts %}S{% endif %}
+	</span>
+	{% endif %}
+
+	</div>
+{% endfor %}
+
+{% if items %}
+<div class="readable-item">
+<details>
+<summary><span class="item-title">Feed Management</span></summary>
+<div style="text-align:center;">
+<button style="font-size: 1.4em;" onclick="javascript:mdeactivate({{ mdeac|safe }})">Deactivate All</button>
+</div>
+</details>
+</div>
+{% endif %}
+
+{# if items #}
+{% else %}
+<div class="readable-item">
+<span class="item-title">Feed is empty</span>
+</div>
+{% endif %}
+
+</div>
+</body>
+</html>

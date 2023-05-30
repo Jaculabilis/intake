@@ -7,7 +7,7 @@ import os
 import os.path
 import time
 
-from .types import InvalidConfigException, SourceUpdateException
+from intake.types import InvalidConfigException, SourceUpdateException
 
 
 class LocalSource:
@@ -67,6 +67,11 @@ class LocalSource:
 
     def delete_item(self, item_id) -> None:
         os.remove(self.get_item_path(item_id))
+
+    def get_all_items(self) -> List[dict]:
+        for filepath in self.source_path.iterdir():
+            if filepath.name.endswith(".item"):
+                yield json.loads(filepath.read_text(encoding="utf8"))
 
 
 def read_stdout(process: Popen, outs: list):

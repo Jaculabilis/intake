@@ -6,8 +6,8 @@ import os.path
 import subprocess
 import sys
 
-from .source import fetch_items, LocalSource, update_items
-from .types import InvalidConfigException, SourceUpdateException
+from intake.source import fetch_items, LocalSource, update_items
+from intake.types import InvalidConfigException, SourceUpdateException
 
 
 def intake_data_dir() -> Path:
@@ -76,10 +76,9 @@ def cmd_update(cmd_args):
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Instead of updating the source, print the fetched items"
+        help="Instead of updating the source, print the fetched items",
     )
     args = parser.parse_args(cmd_args)
-    ret = 0
 
     source = LocalSource(Path(args.base), args.source)
     try:
@@ -92,13 +91,38 @@ def cmd_update(cmd_args):
     except InvalidConfigException as ex:
         print("Could not fetch", args.source)
         print(ex)
-        ret = 1
+        return 1
     except SourceUpdateException as ex:
         print("Error updating source", args.source)
         print(ex)
-        ret = 1
+        return 1
 
-    return ret
+    return 0
+
+
+def cmd_run(cmd_args):
+    """Run the default Flask server."""
+    parser = argparse.ArgumentParser(
+        prog="intake run",
+        description=cmd_run.__doc__,
+    )
+    parser.add_argument(
+        "--base",
+        default=intake_data_dir(),
+        help="Path to the intake data directory containing source directories",
+    )
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--port", type=int, default=5000)
+    args = parser.parse_args(cmd_args)
+
+    try:
+        from intake.app import app
+
+        app.run(port=args.port, debug=args.debug)
+        return 0
+    except Exception as ex:
+        print(ex)
+        return 1
 
 
 def cmd_help(_):
