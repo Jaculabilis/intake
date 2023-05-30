@@ -14,6 +14,7 @@ class LocalSource:
     """
     An intake source backed by a filesystem directory.
     """
+
     def __init__(self, data_path: Path, source_name: str):
         self.data_path: Path = data_path
         self.source_name = source_name
@@ -34,7 +35,8 @@ class LocalSource:
         return [
             filepath.name[:-5]
             for filepath in self.source_path.iterdir()
-            if filepath.name.endswith(".item")]
+            if filepath.name.endswith(".item")
+        ]
 
     def item_exists(self, item_id) -> bool:
         return self.get_item_path(item_id).exists()
@@ -61,7 +63,7 @@ class LocalSource:
         tmp_path = self.source_path / f"{item['id']}.item.tmp"
         with tmp_path.open("w") as f:
             f.write(json.dumps(item, indent=2))
-        os.rename(tmp_path, self.get_item_path(item['id']))
+        os.rename(tmp_path, self.get_item_path(item["id"]))
 
     def delete_item(self, item_id) -> None:
         os.remove(self.get_item_path(item_id))
@@ -166,7 +168,7 @@ def update_items(source: LocalSource, fetched_items):
     """
     # Get a list of item ids that already existed for this source.
     prior_ids = source.get_item_ids()
-    print(f'Found {len(prior_ids)} prior items')
+    print(f"Found {len(prior_ids)} prior items")
 
     # Determine which items are new and which are updates.
     new_items = []
@@ -185,7 +187,17 @@ def update_items(source: LocalSource, fetched_items):
     # Update the other items using the fetched items' values.
     for upd_item in upd_items:
         old_item = source.get_item(upd_item["id"])
-        for field in ("title", "tags", "link", "time", "author", "body", "ttl", "ttd", "tts"):
+        for field in (
+            "title",
+            "tags",
+            "link",
+            "time",
+            "author",
+            "body",
+            "ttl",
+            "ttd",
+            "tts",
+        ):
             if field in upd_item and old_item[field] != upd_item[field]:
                 old_item[field] = upd_item[field]
         if "callback" in upd_item:
@@ -193,16 +205,14 @@ def update_items(source: LocalSource, fetched_items):
             # in the callback when the item is new will keep their original
             # values, as those values reappear in new_item on subsequent
             # updates.
-            old_item['callback'] = {**old_item['callback'], **upd_item['callback']}
+            old_item["callback"] = {**old_item["callback"], **upd_item["callback"]}
 
     # Items are removed when they are old (not in the latest fetch) and
     # inactive. Some item fields change this basic behavior.
     del_count = 0
     now = int(time.time())
     upd_ids = [item["id"] for item in upd_items]
-    old_item_ids = [
-        item_id for item_id in prior_ids
-        if item_id not in upd_ids]
+    old_item_ids = [item_id for item_id in prior_ids if item_id not in upd_ids]
 
     for item_id in old_item_ids:
         item = source.get_item(item_id)
