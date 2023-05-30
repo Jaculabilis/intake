@@ -72,12 +72,12 @@ var deactivate = function (source, itemid) {
 	});
 };
 var punt = function (source, itemid) {
-	fetch('/punt/', {
-		method: 'POST',
+	fetch(`/item/${source}/${itemid}`, {
+		method: 'PATCH',
 		headers: {
 			'Content-Type': 'application/json; charset=UTF-8',
 		},
-		body: JSON.stringify({source: source, itemid: itemid}),
+		body: JSON.stringify({tts: "+1"}),
 	})
 	.then(response => response.json())
 	.then(function (data) {

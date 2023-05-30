@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import os
+import time
 
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 
@@ -92,6 +93,20 @@ def deactivate(source_name, item_id):
     item["active"] = False
     source.save_item(item)
     return jsonify({"active": item["active"]})
+
+
+@app.patch("/item/<string:source_name>/<string:item_id>")
+def update(source_name, item_id):
+    source = LocalSource(intake_data_dir(), source_name)
+    item = source.get_item(item_id)
+    params = request.get_json()
+    if "tts" in params:
+        tomorrow = datetime.now() + timedelta(days=1)
+        morning = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 6, 0, 0)
+        til_then = morning.timestamp() - item["created"]
+        item["tts"] = til_then
+    source.save_item(item)
+    return jsonify(item)
 
 
 def wsgi():
