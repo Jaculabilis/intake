@@ -74,6 +74,17 @@ def source_feed(source_name):
     )
 
 
+@app.delete("/item/<string:source_name>/<string:item_id>")
+def deactivate(source_name, item_id):
+    source = LocalSource(intake_data_dir(), source_name)
+    item = source.get_item(item_id)
+    if item["active"]:
+        print(f"Deactivating {source_name}/{item_id}")
+    item["active"] = False
+    source.save_item(item)
+    return jsonify({"active": item["active"]})
+
+
 def wsgi():
     # init_default_logging()
     return app

@@ -60,12 +60,8 @@ table.feed-control td {
 </style>
 <script>
 var deactivate = function (source, itemid) {
-	fetch('/deactivate/', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json; charset=UTF-8',
-		},
-		body: JSON.stringify({source: source, itemid: itemid}),
+	fetch(`/item/${source}/${itemid}`, {
+		method: 'DELETE',
 	})
 	.then(response => response.json())
 	.then(function (data) {
