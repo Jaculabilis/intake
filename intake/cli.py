@@ -1,7 +1,9 @@
 from pathlib import Path
 import argparse
+import json
 import os
 import os.path
+import subprocess
 import sys
 
 from .source import fetch_items, LocalSource, update_items
@@ -13,6 +15,47 @@ def intake_data_dir() -> Path:
     data_home = Path(os.environ.get("XDG_DATA_HOME", home / ".local" / "share"))
     intake_data = data_home / "intake"
     return intake_data
+
+
+def cmd_edit(cmd_args):
+    """Open a source's config for editing."""
+    parser = argparse.ArgumentParser(
+        prog="intake edit",
+        description=cmd_edit.__doc__,
+    )
+    parser.add_argument(
+        "--base",
+        default=intake_data_dir(),
+        help="Path to the intake data directory containing source directories",
+    )
+    parser.add_argument(
+        "--source",
+        help="Source name to edit",
+    )
+    args = parser.parse_args(cmd_args)
+
+    editor_cmd = os.environ.get("EDITOR")
+    if not editor_cmd:
+        print("Cannot edit, no EDITOR set")
+        return 1
+
+    # Make a copy of the config
+    source = LocalSource(Path(args.base), args.source)
+    tmp_path = source.source_path / "intake.json.tmp"
+    tmp_path.write_text(json.dumps(source.get_config(), indent=2))
+
+    # Edit the config
+    subprocess.run([editor_cmd, tmp_path])
+
+    # Commit the change if the new config is valid
+    try:
+        json.load(tmp_path.open())
+    except json.JSONDecodeError:
+        print("Invalid JSON")
+        return 1
+    tmp_path.replace(source.source_path / "intake.json")
+
+    return 0
 
 
 def cmd_update(cmd_args):
