@@ -1,0 +1,50 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
+<style>
+div#wrapper {
+	max-width: 700px;
+	margin: 0 auto;
+}
+.readable-item {
+	border: 1px solid black; border-radius: 6px;
+	padding: 5px;
+	margin-bottom: 20px;
+	word-break: break-word;
+}
+.item-title {
+	font-size: 1.4em;
+}
+.readable-item img {
+	max-width: 100%;
+}
+button, summary {
+	cursor: pointer;
+}
+summary {
+	display: block;
+}
+summary:focus {
+	outline: 1px dotted gray;
+}
+</style>
+</head>
+<body>
+<div id="wrapper">
+<div class="readable-item">
+<details open>
+<summary><span class="item-title">Sources</span></summary>
+{% if not sources %}
+<p>No sources found.</p>
+{% else %}
+{% for source in sources %}
+<p><a href="{{ url_for('source_feed', source_name=source.source_name) }}">{{ source.source_name|safe }}</a></p>
+{% endfor %}
+{% endif %}
+</details>
+</div>
+</div>
+</body>
+</html>

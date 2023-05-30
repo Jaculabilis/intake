@@ -35,7 +35,20 @@ def datetimeformat(value):
 
 @app.route("/")
 def root():
-    return "hello, world"
+    """
+    Navigation home page.
+    """
+    data_path = intake_data_dir()
+    sources = []
+    for child in data_path.iterdir():
+        if (child / "intake.json").exists():
+            sources.append(LocalSource(data_path, child.name))
+    sources.sort(key=lambda s: s.source_name)
+
+    return render_template(
+        "home.jinja2",
+        sources=sources,
+    )
 
 
 @app.route("/source/<string:source_name>")
