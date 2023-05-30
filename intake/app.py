@@ -78,7 +78,7 @@ def source_feed(source_name):
         now=int(time.time()),
         mdeac=[
             {"source": item["source"], "itemid": item["id"]}
-            for item in all_items
+            for item in sorted_items
             if "id" in item
         ],
     )
@@ -107,6 +107,23 @@ def update(source_name, item_id):
         item["tts"] = til_then
     source.save_item(item)
     return jsonify(item)
+
+
+@app.post("/mass-deactivate/")
+def mass_deactivate():
+    params = request.get_json()
+    if "items" not in params:
+        print(f"Bad request params: {params}")
+    for info in params.get("items"):
+        source = info["source"]
+        itemid = info["itemid"]
+        source = LocalSource(intake_data_dir(), source)
+        item = source.get_item(itemid)
+        if item["active"]:
+            print(f"Deactivating {info['source']}/{info['itemid']}")
+        item["active"] = False
+        source.save_item(item)
+    return jsonify({})
 
 
 def wsgi():
