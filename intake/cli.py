@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+from shutil import get_terminal_size
 import argparse
 import json
 import os
@@ -30,6 +32,7 @@ def cmd_edit(cmd_args):
     )
     parser.add_argument(
         "--source",
+        required=True,
         help="Source name to edit",
     )
     args = parser.parse_args(cmd_args)
@@ -71,6 +74,7 @@ def cmd_update(cmd_args):
     )
     parser.add_argument(
         "--source",
+        required=True,
         help="Source name to fetch",
     )
     parser.add_argument(
@@ -98,6 +102,71 @@ def cmd_update(cmd_args):
         return 1
 
     return 0
+
+
+def cmd_feed(cmd_args):
+    """Print the current feed."""
+    parser = argparse.ArgumentParser(
+        prog="intake feed",
+        description=cmd_feed.__doc__,
+    )
+    parser.add_argument(
+        "--data",
+        "-d",
+        default=intake_data_dir(),
+        help="Path to the intake data directory",
+    )
+    parser.add_argument(
+        "--sources",
+        nargs="+",
+        help="Limit feed to these sources",
+    )
+    parser.add_argument
+    args = parser.parse_args(cmd_args)
+
+    data = Path(args.data)
+    if not data.exists() and data.is_dir():
+        print("Not a directory:", data)
+        return 1
+
+    if not args.sources:
+        args.sources = [child.name for child in data.iterdir()]
+
+    sources = [LocalSource(data, name) for name in args.sources if (data / name / "intake.json").exists()]
+    items = [item for source in sources for item in source.get_all_items() ]
+
+    if not items:
+        print("Feed is empty")
+        return 0
+
+    size = get_terminal_size((80, 20))
+    width = min(80, size.columns)
+
+    for item in items:
+        title = item["title"] if "title" in item else ""
+        titles = [title]
+        while len(titles[-1]) > width - 4:
+            i = titles[-1][: width - 4].rfind(" ")
+            titles = titles[:-1] + [titles[-1][:i].strip(), titles[-1][i:].strip()]
+        print("+" + (width - 2) * "-" + "+")
+        for title in titles:
+            print("| {0:<{1}} |".format(title, width - 4))
+        print("|{0:<{1}}|".format("", width - 2))
+        info1 = ""
+        if "author" in title and item["author"]:
+            info1 += item["author"] + "  "
+        if "time" in item and item["time"]:
+            time_dt = datetime.fromtimestamp(item["time"])
+            info1 += time_dt.strftime("%Y-%m-%d %H:%M:%S")
+        print("| {0:<{1}} |".format(info1, width - 4))
+        created_dt = datetime.fromtimestamp(item["created"])
+        created = created_dt.strftime("%Y-%m-%d %H:%M:%S")
+        info2 = "{0}  {1}  {2}".format(
+            item.get("source", ""), item.get("id", ""), created
+        )
+        print("| {0:<{1}} |".format(info2, width - 4))
+        print("+" + (width - 2) * "-" + "+")
+        print()
 
 
 def cmd_run(cmd_args):
