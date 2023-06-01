@@ -27,11 +27,11 @@ intake
 
 ```
 {
-  "fetch": {
-    "exe": "<absolute path to program or name on intake's PATH>",
-    "args": ["list", "of", "program", "arguments"]
-  },
   "action": {
+    "fetch": {
+      "exe": "<absolute path to program or name on intake's PATH>",
+      "args": ["list", "of", "program", "arguments"]
+    },
     "<action name>": {
       "exe": "...",
       "args": "..."
@@ -41,15 +41,18 @@ intake
 }
 ```
 
-`fetch` is required. If `action` or `env` are absent, they will be treated as if they were empty.
+Each key under `action` defines an action that can be taken for the source. The `fetch` action is required. `env` is optional. Each key under `env` will be set as an environment variable when executing actions.
 
-When a feed source is updated, `fetch.exe` will be executed with `fetch.args` as arguments. The following environment variables will be set:
+When an action is executed, intake executes the `exe` program for the action with the corresponding `args` as arguments. The process's environment is as follows:
 
+* intake's environment is inherited.
 * `STATE_PATH` is set to the absolute path of `state`.
 * Each key in `env` in `config.json` is passed with its value.
 
-Each line written to the process's `stdout` will be parsed as a JSON object representing a feed item. Each line written to `stderr` will be logged by intake. `stdout` and `stderr` are decoded as UTF-8.
+Anything written to `stderr` by the process will be logged by intake.
 
-If invalid JSON is written, intake will consider the feed update to be a failure. If the exit code is nonzero, intake will consider the feed update to be a failure, even if valid JSON was received. No changes will happen to the feed state as a result of a failed update.
+The `fetch` action is used to fetch the current state of the feed source. It receives no input and should write feed items to `stdout` as JSON objects, each on one line. All other actions are taken in the context of a single item. These actions receive the item as a JSON object on the first line of `stdin`. The process should write the item back to `stdout` with any changes as a result of the action.
 
-Item actions are performed by executing `action.<name>.exe` with `action.<name>.args` as arguments. The process will receive the item, serialized as JSON, on the first line of `stdin`. The process should write the item back to `stdout` as a single line of JSON with any updates from the action.
+An item must have a key under action` with that action's name to support executing that action for that item.
+
+All encoding is done with UTF-8. If an item cannot be parsed or the exit code of the process is nonzero, intake will consider the action to be a failure. No items or other feed changes will happen as a result of a failed action, except for changes to `state` done by the action process.

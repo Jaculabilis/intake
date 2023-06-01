@@ -58,7 +58,7 @@ def cmd_edit(cmd_args):
                         "exe": "",
                         "args": [],
                     },
-                    "actions": {},
+                    "action": {},
                     "env": {},
                 },
                 f,

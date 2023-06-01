@@ -1,9 +1,11 @@
 {
-  "fetch": {
-    "exe": "sh",
-    "args": [
-      "-c",
-      "echo {\\\"id\\\": \\\"$(date +%Y-%m-%d-%H-%M)\\\"}"
-    ]
+  "action": {
+    "fetch": {
+      "exe": "sh",
+      "args": [
+        "-c",
+        "echo {\\\"id\\\": \\\"$(date +%Y-%m-%d-%H-%M)\\\"}"
+      ]
+    }
   }
 }

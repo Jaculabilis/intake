@@ -1,9 +1,9 @@
 {
-  "fetch": {
-    "exe": "./increment.py",
-    "args": ["fetch"]
-  },
-  "actions": {
+  "action": {
+    "fetch": {
+      "exe": "./increment.py",
+      "args": ["fetch"]
+    },
     "increment": {
       "exe": "./increment.py",
       "args": ["increment"]

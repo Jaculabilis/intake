@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from subprocess import Popen, PIPE, TimeoutExpired
 from threading import Thread
@@ -74,7 +75,7 @@ class LocalSource:
                 yield json.loads(filepath.read_text(encoding="utf8"))
 
 
-def read_stdout(process: Popen, outs: list):
+def read_stdout(process: Popen, output: list):
     """
     Read the subprocess's stdout into memory.
     This prevents the process from blocking when the pipe fills up.
@@ -83,7 +84,7 @@ def read_stdout(process: Popen, outs: list):
         data = process.stdout.readline()
         if data:
             print(f"[stdout] <{repr(data)}>")
-            outs.append(data)
+            output.append(data)
         if process.poll() is not None:
             break
 
@@ -101,62 +102,83 @@ def read_stderr(process: Popen):
             break
 
 
-def fetch_items(source: LocalSource, update_timeout=60):
+def execute_source_action(
+    source: LocalSource, action: str, input: str, timeout: timedelta
+):
     """
-    Execute the feed source and return the current feed items.
-    Returns a list of feed items on success.
-    Throws SourceUpdateException if the feed source update failed.
+    Execute the action from a given source. If stdin is specified, pass it
+    along to the process.
     """
-    # Load the source's config to get its update command
+    # Gather the information necessary to launch the process
     config = source.get_config()
+    action_cfg = config.get("action", {}).get(action)
 
-    if "fetch" not in config:
-        raise InvalidConfigException("Missing fetch")
+    if not action_cfg:
+        raise InvalidConfigException(f"No such action {action}")
+    if "exe" not in action_cfg:
+        raise InvalidConfigException(f"No exe for action {action}")
 
-    exe_name = config["fetch"]["exe"]
-    exe_args = config["fetch"].get("args", [])
-
-    # Overlay the current env with the config env and intake-provided values
-    exe_env = {
+    command = [action_cfg["exe"], *action_cfg.get("args", [])]
+    env = {
         **os.environ.copy(),
         **config.get("env", {}),
         "STATE_PATH": str(source.get_state_path()),
     }
 
-    # Launch the update command
+    # Launch the process
     try:
         process = Popen(
-            [exe_name, *exe_args],
+            command,
+            stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
             cwd=source.source_path,
-            env=exe_env,
+            env=env,
             encoding="utf8",
         )
     except PermissionError:
-        raise SourceUpdateException("command not executable")
+        raise SourceUpdateException(f"Command not executable: {''.join(command)}")
 
-    # While the update command is executing, watch its output
-    t_stderr = Thread(target=read_stderr, args=(process,), daemon=True)
+    # Kick off monitoring threads
+    output = []
+    t_stdout: Thread = Thread(target=read_stdout, args=(process, output), daemon=True)
+    t_stdout.start()
+    t_stderr: Thread = Thread(target=read_stderr, args=(process,), daemon=True)
     t_stderr.start()
 
-    outs = []
-    t_stdout = Thread(target=read_stdout, args=(process, outs), daemon=True)
-    t_stdout.start()
+    # Send input to the process, if provided
+    if input:
+        process.stdin.write(input)
+        if not input.endswith("\n"):
+            process.stdin.write("\n")
+        process.stdin.flush()
 
-    # Time out the process if it takes too long
     try:
-        process.wait(timeout=update_timeout)
+        process.wait(timeout=timeout.total_seconds())
     except TimeoutExpired:
         process.kill()
     t_stdout.join(timeout=1)
     t_stderr.join(timeout=1)
 
     if process.poll():
-        raise SourceUpdateException("return code")
+        raise SourceUpdateException(
+            f"{source.source_name} {action} failed with code {process.returncode}"
+        )
 
+    return output
+
+
+def fetch_items(source: LocalSource, timeout: int = 60):
+    """
+    Execute the feed source and return the current feed items.
+    Returns a list of feed items on success.
+    Throws SourceUpdateException if the feed source update failed.
+    """
     items = []
-    for line in outs:
+
+    output = execute_source_action(source, "fetch", None, timedelta(timeout))
+
+    for line in output:
         try:
             item = json.loads(line)
             items.append(item)
@@ -166,72 +188,18 @@ def fetch_items(source: LocalSource, update_timeout=60):
     return items
 
 
-def execute_action(source: LocalSource, item_id: str, action: str, action_timeout=60):
+def execute_action(source: LocalSource, item_id: str, action: str, timeout: int = 60):
     """
     Execute the action for a feed source.
     """
-    # Load the item
     item = source.get_item(item_id)
 
-    # Load the source's config
-    config = source.get_config()
-
-    actions = config.get("actions", {})
-    if action not in actions:
-        raise InvalidConfigException(f"Missing action {action}")
-
-    exe_name = config["actions"][action]["exe"]
-    exe_args = config["actions"][action].get("args", [])
-
-    # Overlay the current env with the config env and intake-provided values
-    exe_env = {
-        **os.environ.copy(),
-        **config.get("env", {}),
-        "STATE_PATH": str(source.get_state_path()),
-    }
-
-    # Launch the action command
-    try:
-        process = Popen(
-            [exe_name, *exe_args],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=PIPE,
-            cwd=source.source_path,
-            env=exe_env,
-            encoding="utf8",
-        )
-    except PermissionError:
-        raise SourceUpdateException("command not executable")
-
-    # While the update command is executing, watch its output
-    t_stderr = Thread(target=read_stderr, args=(process,), daemon=True)
-    t_stderr.start()
-
-    outs = []
-    t_stdout = Thread(target=read_stdout, args=(process, outs), daemon=True)
-    t_stdout.start()
-
-    # Send the item to the process
-    process.stdin.write(json.dumps(item))
-    process.stdin.write("\n")
-    process.stdin.flush()
-
-    # Time out the process if it takes too long
-    try:
-        process.wait(timeout=action_timeout)
-    except TimeoutExpired:
-        process.kill()
-    t_stdout.join(timeout=1)
-    t_stderr.join(timeout=1)
-
-    if process.poll():
-        raise SourceUpdateException("return code")
-
-    if not outs:
+    output = execute_source_action(source, action, json.dumps(item), timedelta(timeout))
+    if not output:
         raise SourceUpdateException("no item")
+
     try:
-        item = json.loads(outs[0])
+        item = json.loads(output[0])
         source.save_item(item)
         return item
     except json.JSONDecodeError:
