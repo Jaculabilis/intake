@@ -8,7 +8,7 @@ import os.path
 import subprocess
 import sys
 
-from intake.source import fetch_items, LocalSource, update_items
+from intake.source import fetch_items, LocalSource, update_items, execute_action
 from intake.types import InvalidConfigException, SourceUpdateException
 
 
@@ -52,14 +52,18 @@ def cmd_edit(cmd_args):
             return 0
         source_path.mkdir()
         with (source_path / "intake.json").open("w") as f:
-            json.dump({
-                "fetch": {
-                    "exe": "",
-                    "args": [],
+            json.dump(
+                {
+                    "fetch": {
+                        "exe": "",
+                        "args": [],
+                    },
+                    "actions": {},
+                    "env": {},
                 },
-                "actions": {},
-                "env": {},
-            }, f, indent=2)
+                f,
+                indent=2,
+            )
 
     # Make a copy of the config
     source = LocalSource(data, args.source)
@@ -131,6 +135,61 @@ def cmd_update(cmd_args):
     return 0
 
 
+def cmd_action(cmd_args):
+    """Execute an action for an item."""
+    parser = argparse.ArgumentParser(
+        prog="intake action",
+        description=cmd_action.__doc__,
+    )
+    parser.add_argument(
+        "--data",
+        "-d",
+        default=intake_data_dir(),
+        help="Path to the intake data directory containing source directories",
+    )
+    parser.add_argument(
+        "--source",
+        "-s",
+        required=True,
+        help="Source name to fetch",
+    )
+    parser.add_argument(
+        "--item",
+        "-i",
+        required=True,
+        help="Item id to perform the action with",
+    )
+    parser.add_argument(
+        "--action",
+        "-a",
+        required=True,
+        help="Action to perform",
+    )
+    args = parser.parse_args(cmd_args)
+
+    source = LocalSource(Path(args.data), args.source)
+    try:
+        item = execute_action(source, args.item, args.action, 5)
+        print("Item:", item)
+    except InvalidConfigException as ex:
+        print("Could not fetch", args.source)
+        print(ex)
+        return 1
+    except SourceUpdateException as ex:
+        print(
+            "Error executing source",
+            args.source,
+            "item",
+            args.item,
+            "action",
+            args.action,
+        )
+        print(ex)
+        return 1
+
+    return 0
+
+
 def cmd_feed(cmd_args):
     """Print the current feed."""
     parser = argparse.ArgumentParser(
@@ -160,8 +219,12 @@ def cmd_feed(cmd_args):
     if not args.sources:
         args.sources = [child.name for child in data.iterdir()]
 
-    sources = [LocalSource(data, name) for name in args.sources if (data / name / "intake.json").exists()]
-    items = [item for source in sources for item in source.get_all_items() ]
+    sources = [
+        LocalSource(data, name)
+        for name in args.sources
+        if (data / name / "intake.json").exists()
+    ]
+    items = [item for source in sources for item in source.get_all_items()]
 
     if not items:
         print("Feed is empty")

@@ -166,6 +166,78 @@ def fetch_items(source: LocalSource, update_timeout=60):
     return items
 
 
+def execute_action(source: LocalSource, item_id: str, action: str, action_timeout=60):
+    """
+    Execute the action for a feed source.
+    """
+    # Load the item
+    item = source.get_item(item_id)
+
+    # Load the source's config
+    config = source.get_config()
+
+    actions = config.get("actions", {})
+    if action not in actions:
+        raise InvalidConfigException(f"Missing action {action}")
+
+    exe_name = config["actions"][action]["exe"]
+    exe_args = config["actions"][action].get("args", [])
+
+    # Overlay the current env with the config env and intake-provided values
+    exe_env = {
+        **os.environ.copy(),
+        **config.get("env", {}),
+        "STATE_PATH": str(source.get_state_path()),
+    }
+
+    # Launch the action command
+    try:
+        process = Popen(
+            [exe_name, *exe_args],
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE,
+            cwd=source.source_path,
+            env=exe_env,
+            encoding="utf8",
+        )
+    except PermissionError:
+        raise SourceUpdateException("command not executable")
+
+    # While the update command is executing, watch its output
+    t_stderr = Thread(target=read_stderr, args=(process,), daemon=True)
+    t_stderr.start()
+
+    outs = []
+    t_stdout = Thread(target=read_stdout, args=(process, outs), daemon=True)
+    t_stdout.start()
+
+    # Send the item to the process
+    process.stdin.write(json.dumps(item))
+    process.stdin.write("\n")
+    process.stdin.flush()
+
+    # Time out the process if it takes too long
+    try:
+        process.wait(timeout=action_timeout)
+    except TimeoutExpired:
+        process.kill()
+    t_stdout.join(timeout=1)
+    t_stderr.join(timeout=1)
+
+    if process.poll():
+        raise SourceUpdateException("return code")
+
+    if not outs:
+        raise SourceUpdateException("no item")
+    try:
+        item = json.loads(outs[0])
+        source.save_item(item)
+        return item
+    except json.JSONDecodeError:
+        raise SourceUpdateException("invalid json")
+
+
 def update_items(source: LocalSource, fetched_items):
     """
     Update the source with a batch of new items, doing creations, updates, and

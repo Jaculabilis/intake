@@ -52,4 +52,4 @@ Each line written to the process's `stdout` will be parsed as a JSON object repr
 
 If invalid JSON is written, intake will consider the feed update to be a failure. If the exit code is nonzero, intake will consider the feed update to be a failure, even if valid JSON was received. No changes will happen to the feed state as a result of a failed update.
 
-Item actions are performed by executing `action.<name>.exe` with `action.<name>.args` as arguments.
+Item actions are performed by executing `action.<name>.exe` with `action.<name>.args` as arguments. The process will receive the item, serialized as JSON, on the first line of `stdin`. The process should write the item back to `stdout` as a single line of JSON with any updates from the action.

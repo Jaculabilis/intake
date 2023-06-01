@@ -1,0 +1,12 @@
+{
+  "fetch": {
+    "exe": "./increment.py",
+    "args": ["fetch"]
+  },
+  "actions": {
+    "increment": {
+      "exe": "./increment.py",
+      "args": ["increment"]
+    }
+  }
+}
