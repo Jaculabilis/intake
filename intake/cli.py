@@ -26,12 +26,14 @@ def cmd_edit(cmd_args):
         description=cmd_edit.__doc__,
     )
     parser.add_argument(
-        "--base",
+        "--data",
+        "-d",
         default=intake_data_dir(),
-        help="Path to the intake data directory containing source directories",
+        help="Path to the intake data directory",
     )
     parser.add_argument(
         "--source",
+        "-s",
         required=True,
         help="Source name to edit",
     )
@@ -42,21 +44,44 @@ def cmd_edit(cmd_args):
         print("Cannot edit, no EDITOR set")
         return 1
 
+    data = Path(args.data)
+    source_path: Path = data / args.source
+    if not source_path.exists():
+        yn = input("Source does not exist, create? [yN] ")
+        if yn.strip().lower() != "y":
+            return 0
+        source_path.mkdir()
+        with (source_path / "intake.json").open("w") as f:
+            json.dump({
+                "fetch": {
+                    "exe": "",
+                    "args": [],
+                },
+                "actions": {},
+                "env": {},
+            }, f, indent=2)
+
     # Make a copy of the config
-    source = LocalSource(Path(args.base), args.source)
+    source = LocalSource(data, args.source)
     tmp_path = source.source_path / "intake.json.tmp"
     tmp_path.write_text(json.dumps(source.get_config(), indent=2))
 
-    # Edit the config
-    subprocess.run([editor_cmd, tmp_path])
+    while True:
+        # Edit the config
+        subprocess.run([editor_cmd, tmp_path])
 
-    # Commit the change if the new config is valid
-    try:
-        json.load(tmp_path.open())
-    except json.JSONDecodeError:
-        print("Invalid JSON")
-        return 1
-    tmp_path.replace(source.source_path / "intake.json")
+        # Check if the new config is valid
+        try:
+            json.load(tmp_path.open())
+        except json.JSONDecodeError:
+            yn = input("Invalid JSON. Return to editor? [Yn] ")
+            if yn.strip().lower() != "n":
+                continue
+            tmp_path.unlink()
+            return 0
+
+        tmp_path.replace(source.source_path / "intake.json")
+        break
 
     return 0
 
@@ -68,12 +93,14 @@ def cmd_update(cmd_args):
         description=cmd_update.__doc__,
     )
     parser.add_argument(
-        "--base",
+        "--data",
+        "-d",
         default=intake_data_dir(),
         help="Path to the intake data directory containing source directories",
     )
     parser.add_argument(
         "--source",
+        "-s",
         required=True,
         help="Source name to fetch",
     )
@@ -84,7 +111,7 @@ def cmd_update(cmd_args):
     )
     args = parser.parse_args(cmd_args)
 
-    source = LocalSource(Path(args.base), args.source)
+    source = LocalSource(Path(args.data), args.source)
     try:
         items = fetch_items(source)
         if not args.dry_run:
@@ -118,6 +145,7 @@ def cmd_feed(cmd_args):
     )
     parser.add_argument(
         "--sources",
+        "-s",
         nargs="+",
         help="Limit feed to these sources",
     )
@@ -176,7 +204,8 @@ def cmd_run(cmd_args):
         description=cmd_run.__doc__,
     )
     parser.add_argument(
-        "--base",
+        "--data",
+        "-d",
         default=intake_data_dir(),
         help="Path to the intake data directory containing source directories",
     )
