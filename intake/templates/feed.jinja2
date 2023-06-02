@@ -57,7 +57,7 @@ pre {
 table.feed-control td {
 	font-family: monospace; padding: 5px 10px;
 }
-div#pager {
+div.center {
 	text-align: center;
 }
 </style>
@@ -91,16 +91,19 @@ var punt = function (source, itemid) {
 	});
 };
 var mdeactivate = function (items) {
-	fetch('/mass-deactivate/', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json; charset=UTF-8',
-		},
-		body: JSON.stringify({items: items}),
-	})
-	.then(function () {
-		location.reload();
-	});
+	console.log(items);
+	if (confirm(`Deactivate ${items.length} items?`)) {
+		fetch('/mass-deactivate/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json; charset=UTF-8',
+			},
+			body: JSON.stringify({items: items}),
+		})
+		.then(function () {
+			location.reload();
+		});
+	}
 };
 var doAction = function (source, itemid, action) {
 	document.getElementById(`${source}-${itemid}-action-${action}`).disabled = true;
@@ -168,7 +171,7 @@ var doAction = function (source, itemid, action) {
 {% endfor %}
 
 {% if pager_prev or pager_next %}
-<div class="readable-item" id="pager">
+<div class="readable-item center">
 <span class="item-title">
 <a {% if pager_prev -%} href="{{pager_prev}}" {%- endif %}>Prev</a> |  <a {% if pager_next -%} href="{{pager_next}}" {%- endif %}>Next</a>
 </span>
@@ -177,18 +180,15 @@ var doAction = function (source, itemid, action) {
 
 {% if items %}
 <div class="readable-item">
-<details>
-<summary><span class="item-title">Feed Management</span></summary>
 <div style="text-align:center;">
-<button style="font-size: 1.4em;" onclick="javascript:mdeactivate({{ mdeac|safe }})">Deactivate All</button>
+<button onclick="javascript:mdeactivate({{ mdeac|safe }})">Deactivate All</button>
 </div>
-</details>
 </div>
 {% endif %}
 
 {# if items #}
 {% else %}
-<div class="readable-item">
+<div class="readable-item center">
 <span class="item-title">Feed is empty</span>
 </div>
 {% endif %}
