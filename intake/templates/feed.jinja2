@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Intake{% if items %} ({{ items|length - 1 }}){% endif %}</title>
+<title>Intake{% if items %} ({{ items|length }}){% endif %}</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
 <style>
 div#wrapper {
@@ -56,6 +56,9 @@ pre {
 }
 table.feed-control td {
 	font-family: monospace; padding: 5px 10px;
+}
+div#pager {
+	text-align: center;
 }
 </style>
 <script>
@@ -163,6 +166,14 @@ var doAction = function (source, itemid, action) {
 
 	</div>
 {% endfor %}
+
+{% if pager_prev or pager_next %}
+<div class="readable-item" id="pager">
+<span class="item-title">
+<a {% if pager_prev -%} href="{{pager_prev}}" {%- endif %}>Prev</a> |  <a {% if pager_next -%} href="{{pager_next}}" {%- endif %}>Next</a>
+</span>
+</div>
+{% endif %}
 
 {% if items %}
 <div class="readable-item">

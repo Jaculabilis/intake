@@ -62,25 +62,38 @@ def source_feed(source_name):
         abort(404)
 
     # Get all items
-    all_items = source.get_all_items()
-    sorted_items = sorted(all_items, key=item_sort_key)
+    all_items = sorted(source.get_all_items(), key=item_sort_key)
 
-    if count_arg := request.args.get("count"):
-        page_arg = request.args.get("page", "0")
-        if count_arg.isdigit() and page_arg.isdigit():
-            count = int(count_arg)
-            page = int(page_arg)
-            sorted_items = sorted_items[count * page : count * page + count]
+    # Apply paging parameters
+    count = int(request.args.get("count", "100"))
+    page = int(request.args.get("page", "0"))
+    paged_items = all_items[count * page : count * page + count]
+    pager_prev = (
+        None
+        if page <= 0
+        else url_for(
+            request.endpoint, source_name=source_name, count=count, page=page - 1
+        )
+    )
+    pager_next = (
+        None
+        if (count * page + count) > len(all_items)
+        else url_for(
+            request.endpoint, source_name=source_name, count=count, page=page + 1
+        )
+    )
 
     return render_template(
         "feed.jinja2",
-        items=sorted_items,
+        items=paged_items,
         now=int(time.time()),
         mdeac=[
             {"source": item["source"], "itemid": item["id"]}
-            for item in sorted_items
+            for item in paged_items
             if "id" in item
         ],
+        pager_prev=pager_prev,
+        pager_next=pager_next,
     )
 
 
