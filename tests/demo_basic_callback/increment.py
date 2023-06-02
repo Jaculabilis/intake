@@ -11,6 +11,7 @@ print("args:", args, file=sys.stderr, flush=True)
 if args.action == "fetch":
     print(json.dumps({
         "id": "updateme",
+        "title": "The count is at 1",
         "action": {
             "increment": 1
         }
@@ -21,5 +22,6 @@ if args.action == "increment":
     item = json.loads(item)
     item["action"]["increment"] += 1
     item["body"] = f"<p>{item['action']['increment']}</p>"
+    item["title"] = f"The count is at {item['action']['increment']}"
     print(json.dumps(item))
     pass

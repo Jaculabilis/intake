@@ -2,7 +2,9 @@
   "action": {
     "fetch": {
       "exe": "python3",
-      "args": ["update.py"]
+      "args": [
+        "update.py"
+      ]
     }
   },
   "env": {

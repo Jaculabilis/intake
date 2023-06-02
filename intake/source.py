@@ -26,6 +26,13 @@ class LocalSource:
         with open(config_path, "r", encoding="utf8") as config_file:
             return json.load(config_file)
 
+    def save_config(self, config: dict) -> None:
+        config_path = self.source_path / "intake.json"
+        tmp_path = config_path.with_name(f"{config_path.name}.tmp")
+        with tmp_path.open("w") as f:
+            f.write(json.dumps(config, indent=2))
+        os.rename(tmp_path, config_path)
+
     def get_state_path(self) -> Path:
         return (self.source_path / "state").absolute()
 
@@ -61,10 +68,11 @@ class LocalSource:
 
     def save_item(self, item: dict) -> None:
         # Write to a tempfile first to avoid losing the item on write failure
-        tmp_path = self.source_path / f"{item['id']}.item.tmp"
+        item_path = self.get_item_path(item["id"])
+        tmp_path = item_path.with_name(f"{item_path.name}.tmp")
         with tmp_path.open("w") as f:
             f.write(json.dumps(item, indent=2))
-        os.rename(tmp_path, self.get_item_path(item["id"]))
+        os.rename(tmp_path, item_path)
 
     def delete_item(self, item_id) -> None:
         os.remove(self.get_item_path(item_id))

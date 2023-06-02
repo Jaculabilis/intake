@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+import json
 import os
 import time
 
@@ -34,7 +35,7 @@ def datetimeformat(value):
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
-@app.route("/")
+@app.get("/")
 def root():
     """
     Navigation home page.
@@ -52,7 +53,7 @@ def root():
     )
 
 
-@app.route("/source/<string:source_name>")
+@app.get("/source/<string:source_name>")
 def source_feed(source_name):
     """
     Feed view for a single source.
@@ -144,6 +145,66 @@ def action(source_name, item_id, action):
     source = LocalSource(intake_data_dir(), source_name)
     item = execute_action(source, item_id, action)
     return jsonify(item)
+
+
+@app.route("/edit/source/<string:source_name>", methods=["GET", "POST"])
+def source_edit(source_name):
+    """
+    Config editor for a source
+    """
+    source = LocalSource(intake_data_dir(), source_name)
+    if not source.source_path.exists():
+        abort(404)
+
+    # For POST, check if the config is valid
+    error_message: str = None
+    if request.method == "POST":
+        config_str = request.form.get("config", "")
+        error_message, config = try_parse_config(config_str)
+        print(config_str)
+        print(error_message)
+        print(config)
+        if not error_message:
+            source.save_config(config)
+            return redirect(url_for("root"))
+
+    # For GET, load the config
+    if request.method == "GET":
+        config = source.get_config()
+        config_str = json.dumps(config, indent=2)
+
+    return render_template(
+        "edit.jinja2",
+        source=source,
+        config=config_str,
+        error_message=error_message,
+    )
+
+
+def try_parse_config(config_str: str):
+    if not config_str:
+        return ("Config required", {})
+    try:
+        parsed = json.loads(config_str)
+    except json.JSONDecodeError:
+        return ("Invalid JSON", {})
+    if not isinstance(parsed, dict):
+        return ("Invalid config format", {})
+    if "action" not in parsed:
+        return ("No actions defined", {})
+    action = parsed["action"]
+    if "fetch" not in action:
+        return ("No fetch action defined", {})
+    fetch = action["fetch"]
+    if "exe" not in fetch:
+        return ("No fetch exe", {})
+    return (
+        None,
+        {
+            "action": parsed["action"],
+            "env": parsed["env"],
+        },
+    )
 
 
 def wsgi():

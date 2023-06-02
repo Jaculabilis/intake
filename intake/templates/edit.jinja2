@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Intake</title>
+<title>Intake - {{ source.source_name }}</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
 <style>
 div#wrapper {
@@ -17,8 +17,28 @@ div#wrapper {
 .item-title {
 	font-size: 1.4em;
 }
+.item-button {
+	font-size: 1em;
+	float:right;
+	margin-left: 2px;
+}
+.item-link {
+	text-decoration: none;
+	float:right;
+	font-size: 1em;
+	padding: 2px 7px;
+	border: 1px solid;
+	border-radius: 2px;
+}
+.item-info {
+	color: rgba(0, 0, 0, 0.7);
+}
 .readable-item img {
 	max-width: 100%;
+}
+.readable-item textarea {
+	width: 100%;
+	resize: vertical;
 }
 button, summary {
 	cursor: pointer;
@@ -29,21 +49,29 @@ summary {
 summary:focus {
 	outline: 1px dotted gray;
 }
+.strikethru span, .strikethru p {
+	text-decoration: line-through;
+}
+.fade span, .fade p {
+	color: rgba(0, 0, 0, 0.2);
+}
+pre {
+	white-space: pre-wrap;
+}
+table.feed-control td {
+	font-family: monospace; padding: 5px 10px;
+}
 </style>
 </head>
 <body>
 <div id="wrapper">
+
 <div class="readable-item">
-<details open>
-<summary><span class="item-title">Sources</span></summary>
-{% if not sources %}
-<p>No sources found.</p>
-{% else %}
-{% for source in sources %}
-<p><a href="{{ url_for('source_feed', source_name=source.source_name) }}">{{ source.source_name|safe }}</a> (<a href="{{ url_for('source_edit', source_name=source.source_name) }}">edit</a>)</p>
-{% endfor %}
-{% endif %}
-</details>
+<form method="post">
+<label for="config" class="item-title">Source Editor</label>
+<textarea autofocus id="config" name="config" rows=20>{{config}}</textarea>
+<p><input type="submit" value="Submit"></p>
+</form>
 </div>
 
 </div>
