@@ -99,14 +99,13 @@ var mdeactivate = function (items) {
 		location.reload();
 	});
 };
-var callback = function (source, itemid) {
-	document.getElementById(source + "-" + itemid + "-callback").disabled = true;
-	fetch('/callback/', {
+var doAction = function (source, itemid, action) {
+	document.getElementById(`${source}-${itemid}-action-${action}`).disabled = true;
+	fetch(`/action/${source}/${itemid}/${action}`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json; charset=UTF-8',
 		},
-		body: JSON.stringify({source: source, itemid: itemid}),
 	})
 	.then(function (data) {
 		location.reload()
@@ -130,15 +129,15 @@ var callback = function (source, itemid) {
 	{% endif %}
 
 	{# The item title is a clickable <summary> if there is body content #}
-	{% if item.body or item.callback %}
+	{% if item.body or item.action %}
 	<details>
 	<summary><span class="item-title">{{item.title}}</span></summary>
 	{% if item.body %}
 	<p>{{item.body|safe}}</p>
 	{% endif %}
-	{% if item.callback %}
-	<p><button id="{{item.source}}-{{item.id}}-callback" onclick="javascript:callback('{{item.source}}', '{{item.id}}')">Callback</button></p>
-	{% endif %}
+	{% for action in item.action %}
+	<p><button id="{{item.source}}-{{item.id}}-action-{{action}}" onclick="javascript:doAction('{{item.source}}', '{{item.id}}', '{{action}}')">{{action}}</button></p>
+	{% endfor %}
 	</details>
 	{% else %}
 	<span class="item-title">{{item.title}}</span><br>

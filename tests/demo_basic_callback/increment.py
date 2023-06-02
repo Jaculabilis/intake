@@ -20,5 +20,6 @@ if args.action == "increment":
     item = sys.stdin.readline()
     item = json.loads(item)
     item["action"]["increment"] += 1
+    item["body"] = f"<p>{item['action']['increment']}</p>"
     print(json.dumps(item))
     pass

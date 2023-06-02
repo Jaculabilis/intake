@@ -75,7 +75,7 @@ class LocalSource:
                 yield json.loads(filepath.read_text(encoding="utf8"))
 
 
-def read_stdout(process: Popen, output: list):
+def _read_stdout(process: Popen, output: list) -> None:
     """
     Read the subprocess's stdout into memory.
     This prevents the process from blocking when the pipe fills up.
@@ -89,7 +89,7 @@ def read_stdout(process: Popen, output: list):
             break
 
 
-def read_stderr(process: Popen):
+def _read_stderr(process: Popen) -> None:
     """
     Read the subprocess's stderr stream and pass it to logging.
     This prevents the process from blocking when the pipe fills up.
@@ -102,12 +102,12 @@ def read_stderr(process: Popen):
             break
 
 
-def execute_source_action(
+def _execute_source_action(
     source: LocalSource, action: str, input: str, timeout: timedelta
-):
+) -> List[str]:
     """
     Execute the action from a given source. If stdin is specified, pass it
-    along to the process.
+    along to the process. Returns lines from stdout.
     """
     # Gather the information necessary to launch the process
     config = source.get_config()
@@ -141,9 +141,9 @@ def execute_source_action(
 
     # Kick off monitoring threads
     output = []
-    t_stdout: Thread = Thread(target=read_stdout, args=(process, output), daemon=True)
+    t_stdout: Thread = Thread(target=_read_stdout, args=(process, output), daemon=True)
     t_stdout.start()
-    t_stderr: Thread = Thread(target=read_stderr, args=(process,), daemon=True)
+    t_stderr: Thread = Thread(target=_read_stderr, args=(process,), daemon=True)
     t_stderr.start()
 
     # Send input to the process, if provided
@@ -168,7 +168,7 @@ def execute_source_action(
     return output
 
 
-def fetch_items(source: LocalSource, timeout: int = 60):
+def fetch_items(source: LocalSource, timeout: int = 60) -> List[dict]:
     """
     Execute the feed source and return the current feed items.
     Returns a list of feed items on success.
@@ -176,7 +176,7 @@ def fetch_items(source: LocalSource, timeout: int = 60):
     """
     items = []
 
-    output = execute_source_action(source, "fetch", None, timedelta(timeout))
+    output = _execute_source_action(source, "fetch", None, timedelta(timeout))
 
     for line in output:
         try:
@@ -188,13 +188,17 @@ def fetch_items(source: LocalSource, timeout: int = 60):
     return items
 
 
-def execute_action(source: LocalSource, item_id: str, action: str, timeout: int = 60):
+def execute_action(
+    source: LocalSource, item_id: str, action: str, timeout: int = 60
+) -> dict:
     """
     Execute the action for a feed source.
     """
     item = source.get_item(item_id)
 
-    output = execute_source_action(source, action, json.dumps(item), timedelta(timeout))
+    output = _execute_source_action(
+        source, action, json.dumps(item), timedelta(timeout)
+    )
     if not output:
         raise SourceUpdateException("no item")
 

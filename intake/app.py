@@ -5,7 +5,7 @@ import time
 
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 
-from intake.source import LocalSource
+from intake.source import LocalSource, execute_action
 
 # Globals
 app = Flask(__name__)
@@ -70,7 +70,7 @@ def source_feed(source_name):
         if count_arg.isdigit() and page_arg.isdigit():
             count = int(count_arg)
             page = int(page_arg)
-            sorted_items = sorted_items[count * page:count * page + count]
+            sorted_items = sorted_items[count * page : count * page + count]
 
     return render_template(
         "feed.jinja2",
@@ -124,6 +124,13 @@ def mass_deactivate():
         item["active"] = False
         source.save_item(item)
     return jsonify({})
+
+
+@app.post("/action/<string:source_name>/<string:item_id>/<string:action>")
+def action(source_name, item_id, action):
+    source = LocalSource(intake_data_dir(), source_name)
+    item = execute_action(source, item_id, action)
+    return jsonify(item)
 
 
 def wsgi():
