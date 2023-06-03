@@ -198,13 +198,12 @@ def try_parse_config(config_str: str):
     fetch = action["fetch"]
     if "exe" not in fetch:
         return ("No fetch exe", {})
-    return (
-        None,
-        {
-            "action": parsed["action"],
-            "env": parsed["env"],
-        },
-    )
+    config = {
+        "action": parsed["action"]
+    }
+    if "env" in parsed:
+        config["env"] = parsed["env"]
+    return (None, config)
 
 
 def wsgi():

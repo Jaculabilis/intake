@@ -2,11 +2,21 @@
   "action": {
     "fetch": {
       "exe": "./increment.py",
-      "args": ["fetch"]
+      "args": [
+        "fetch"
+      ]
     },
     "increment": {
       "exe": "./increment.py",
-      "args": ["increment"]
+      "args": [
+        "increment"
+      ]
+    },
+    "decrement": {
+      "exe": "./increment.py",
+      "args": [
+        "decrement"
+      ]
     }
   }
 }

@@ -13,7 +13,8 @@ if args.action == "fetch":
         "id": "updateme",
         "title": "The count is at 1",
         "action": {
-            "increment": 1
+            "increment": 1,
+            "decrement": "",
         }
     }))
 
@@ -24,4 +25,11 @@ if args.action == "increment":
     item["body"] = f"<p>{item['action']['increment']}</p>"
     item["title"] = f"The count is at {item['action']['increment']}"
     print(json.dumps(item))
-    pass
+
+if args.action == "decrement":
+    item = sys.stdin.readline()
+    item = json.loads(item)
+    item["action"]["increment"] -= 1
+    item["body"] = f"<p>{item['action']['increment']}</p>"
+    item["title"] = f"The count is at {item['action']['increment']}"
+    print(json.dumps(item))
