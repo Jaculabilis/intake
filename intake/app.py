@@ -28,6 +28,15 @@ def item_sort_key(item):
     return (item_date, item["id"])
 
 
+def show_item(item):
+    """
+    Whether to show an item based on active and tts.
+    """
+    return item["active"] and (
+        "tts" not in item or item["created"] + item["tts"] < int(time.time())
+    )
+
+
 @app.template_filter("datetimeformat")
 def datetimeformat(value):
     if not value:
@@ -70,7 +79,9 @@ def source_feed(name):
     if not source.source_path.exists():
         abort(404)
 
-    return _sources_feed(name, [source])
+    return _sources_feed(
+        name, [source], show_hidden=request.args.get("hidden", True)
+    )
 
 
 @app.get("/channel/<string:name>")
@@ -84,18 +95,25 @@ def channel_feed(name):
     channels = json.loads(channels_config_path.read_text(encoding="utf8"))
     if name not in channels:
         abort(404)
-
     sources = [LocalSource(intake_data_dir(), name) for name in channels[name]]
-    return _sources_feed(name, sources)
+
+    return _sources_feed(
+        name, sources, show_hidden=request.args.get("hidden", False)
+    )
 
 
-def _sources_feed(name: str, sources: List[LocalSource]):
+def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
     """
     Feed view for multiple sources.
     """
     # Get all items
     all_items = sorted(
-        [item for source in sources for item in source.get_all_items()],
+        [
+            item
+            for source in sources
+            for item in source.get_all_items()
+            if show_item(item) or show_hidden
+        ],
         key=item_sort_key,
     )
 
@@ -106,16 +124,12 @@ def _sources_feed(name: str, sources: List[LocalSource]):
     pager_prev = (
         None
         if page <= 0
-        else url_for(
-            request.endpoint, name=name, count=count, page=page - 1
-        )
+        else url_for(request.endpoint, name=name, count=count, page=page - 1)
     )
     pager_next = (
         None
         if (count * page + count) > len(all_items)
-        else url_for(
-            request.endpoint, name=name, count=count, page=page + 1
-        )
+        else url_for(request.endpoint, name=name, count=count, page=page + 1)
     )
 
     return render_template(
