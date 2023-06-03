@@ -33,6 +33,21 @@ summary:focus {
 </head>
 <body>
 <div id="wrapper">
+
+<div class="readable-item">
+<details open>
+<summary><span class="item-title">Channels</span></summary>
+{% if not channels %}
+<p>No channels found.</p>
+{% else %}
+{% for channel in channels %}
+<p><a href="{{ url_for('channel_feed', name=channel) }}">{{ channel }}</a></p>
+{% endfor %}
+{% endif %}
+<p><a href="{{ url_for('channels_edit') }}">Edit channels</a></p>
+</details>
+</div>
+
 <div class="readable-item">
 <details open>
 <summary><span class="item-title">Sources</span></summary>
@@ -40,7 +55,7 @@ summary:focus {
 <p>No sources found.</p>
 {% else %}
 {% for source in sources %}
-<p><a href="{{ url_for('source_feed', source_name=source.source_name) }}">{{ source.source_name|safe }}</a> (<a href="{{ url_for('source_edit', source_name=source.source_name) }}">edit</a>)</p>
+<p><a href="{{ url_for('source_feed', name=source.source_name) }}">{{ source.source_name|safe }}</a> (<a href="{{ url_for('source_edit', name=source.source_name) }}">edit</a>)</p>
 {% endfor %}
 {% endif %}
 </details>

@@ -1,0 +1,7 @@
+{
+  "demo": [
+    "demo_basic_callback",
+    "demo_logging",
+    "demo_raw_sh"
+  ]
+}

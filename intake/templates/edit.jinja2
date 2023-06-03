@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Intake - {{ source.source_name }}</title>
+<title>Intake - {{ subtitle }}</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
 <style>
 div#wrapper {
@@ -61,6 +61,9 @@ pre {
 table.feed-control td {
 	font-family: monospace; padding: 5px 10px;
 }
+span.error-message {
+	color: red;
+}
 </style>
 </head>
 <body>
@@ -68,9 +71,13 @@ table.feed-control td {
 
 <div class="readable-item">
 <form method="post">
-<label for="config" class="item-title">Source Editor</label>
+<label for="config" class="item-title">Config Editor</label>
 <textarea autofocus id="config" name="config" rows=20>{{config}}</textarea>
-<p><input type="submit" value="Submit"></p>
+<p><input type="submit" value="Submit">
+{% if error_message %}
+<span class="error-message">{{ error_message }}</span>
+{% endif %}
+</p>
 </form>
 </div>
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import List
 import json
 import os
 import time
@@ -41,29 +42,62 @@ def root():
     Navigation home page.
     """
     data_path = intake_data_dir()
+
     sources = []
     for child in data_path.iterdir():
         if (child / "intake.json").exists():
             sources.append(LocalSource(data_path, child.name))
     sources.sort(key=lambda s: s.source_name)
 
+    channels = {}
+    channels_config_path = data_path / "channels.json"
+    if channels_config_path.exists():
+        channels = json.loads(channels_config_path.read_text(encoding="utf8"))
+
     return render_template(
         "home.jinja2",
         sources=sources,
+        channels=channels,
     )
 
 
-@app.get("/source/<string:source_name>")
-def source_feed(source_name):
+@app.get("/source/<string:name>")
+def source_feed(name):
     """
     Feed view for a single source.
     """
-    source = LocalSource(intake_data_dir(), source_name)
+    source = LocalSource(intake_data_dir(), name)
     if not source.source_path.exists():
         abort(404)
 
+    return _sources_feed(name, [source])
+
+
+@app.get("/channel/<string:name>")
+def channel_feed(name):
+    """
+    Feed view for a channel.
+    """
+    channels_config_path = intake_data_dir() / "channels.json"
+    if not channels_config_path.exists():
+        abort(404)
+    channels = json.loads(channels_config_path.read_text(encoding="utf8"))
+    if name not in channels:
+        abort(404)
+
+    sources = [LocalSource(intake_data_dir(), name) for name in channels[name]]
+    return _sources_feed(name, sources)
+
+
+def _sources_feed(name: str, sources: List[LocalSource]):
+    """
+    Feed view for multiple sources.
+    """
     # Get all items
-    all_items = sorted(source.get_all_items(), key=item_sort_key)
+    all_items = sorted(
+        [item for source in sources for item in source.get_all_items()],
+        key=item_sort_key,
+    )
 
     # Apply paging parameters
     count = int(request.args.get("count", "100"))
@@ -73,14 +107,14 @@ def source_feed(source_name):
         None
         if page <= 0
         else url_for(
-            request.endpoint, source_name=source_name, count=count, page=page - 1
+            request.endpoint, name=name, count=count, page=page - 1
         )
     )
     pager_next = (
         None
         if (count * page + count) > len(all_items)
         else url_for(
-            request.endpoint, source_name=source_name, count=count, page=page + 1
+            request.endpoint, name=name, count=count, page=page + 1
         )
     )
 
@@ -147,12 +181,12 @@ def action(source_name, item_id, action):
     return jsonify(item)
 
 
-@app.route("/edit/source/<string:source_name>", methods=["GET", "POST"])
-def source_edit(source_name):
+@app.route("/edit/source/<string:name>", methods=["GET", "POST"])
+def source_edit(name):
     """
     Config editor for a source
     """
-    source = LocalSource(intake_data_dir(), source_name)
+    source = LocalSource(intake_data_dir(), name)
     if not source.source_path.exists():
         abort(404)
 
@@ -160,10 +194,7 @@ def source_edit(source_name):
     error_message: str = None
     if request.method == "POST":
         config_str = request.form.get("config", "")
-        error_message, config = try_parse_config(config_str)
-        print(config_str)
-        print(error_message)
-        print(config)
+        error_message, config = _parse_source_config(config_str)
         if not error_message:
             source.save_config(config)
             return redirect(url_for("root"))
@@ -175,13 +206,13 @@ def source_edit(source_name):
 
     return render_template(
         "edit.jinja2",
-        source=source,
+        subtitle=source.source_name,
         config=config_str,
         error_message=error_message,
     )
 
 
-def try_parse_config(config_str: str):
+def _parse_source_config(config_str: str):
     if not config_str:
         return ("Config required", {})
     try:
@@ -198,12 +229,60 @@ def try_parse_config(config_str: str):
     fetch = action["fetch"]
     if "exe" not in fetch:
         return ("No fetch exe", {})
-    config = {
-        "action": parsed["action"]
-    }
+    config = {"action": parsed["action"]}
     if "env" in parsed:
         config["env"] = parsed["env"]
     return (None, config)
+
+
+@app.route("/edit/channels", methods=["GET", "POST"])
+def channels_edit():
+    """
+    Config editor for channels
+    """
+    config_path = intake_data_dir() / "channels.json"
+
+    # For POST, check if the config is valid
+    error_message: str = None
+    if request.method == "POST":
+        config_str = request.form.get("config", "")
+        error_message, config = _parse_channels_config(config_str)
+        if not error_message:
+            config_path.write_text(json.dumps(config, indent=2), encoding="utf8")
+            return redirect(url_for("root"))
+
+    # For GET, load the config
+    if request.method == "GET":
+        if config_path.exists():
+            config = json.loads(config_path.read_text(encoding="utf8"))
+        else:
+            config = {}
+        config_str = json.dumps(config, indent=2)
+
+    return render_template(
+        "edit.jinja2",
+        subtitle="Channels",
+        config=config_str,
+        error_message=error_message,
+    )
+
+
+def _parse_channels_config(config_str: str):
+    if not config_str:
+        return ("Config required", {})
+    try:
+        parsed = json.loads(config_str)
+    except json.JSONDecodeError:
+        return ("Invalid JSON", {})
+    if not isinstance(parsed, dict):
+        return ("Invalid config format", {})
+    for key in parsed:
+        if not isinstance(parsed[key], list):
+            return (f"{key} must map to a list", {})
+        for val in parsed[key]:
+            if not isinstance(val, str):
+                return f"{key} source {val} must be a string"
+    return (None, parsed)
 
 
 def wsgi():
