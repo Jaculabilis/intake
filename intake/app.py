@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+from random import getrandbits
 from typing import List
 import json
 import os
@@ -297,6 +298,33 @@ def _parse_channels_config(config_str: str):
             if not isinstance(val, str):
                 return f"{key} source {val} must be a string"
     return (None, parsed)
+
+
+@app.post("/add")
+def add_item():
+    # Ensure the default source exists
+    source_path = intake_data_dir() / "default"
+    if not source_path.exists():
+        source_path.mkdir()
+    config_path = source_path / "intake.json"
+    if not config_path.exists():
+        config_path.write_text(json.dumps({
+            "action": {
+                "fetch": {
+                    "exe": "true"
+                }
+            }
+        }, indent=2))
+    source = LocalSource(source_path.parent, source_path.name)
+
+    # Clean up the fields
+    item = {key: value for key, value in request.form.items() if value}
+    item["id"] = '{:x}'.format(getrandbits(16 * 4))
+    # TODO: this doesn't support tags or ttX fields correctly
+
+    source.new_item(item)
+
+    return redirect(url_for("source_feed", name="default"))
 
 
 def wsgi():
