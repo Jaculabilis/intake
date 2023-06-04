@@ -4,11 +4,11 @@
 <title>Intake</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
 <style>
-div#wrapper {
+main {
 	max-width: 700px;
 	margin: 0 auto;
 }
-.readable-item {
+article {
 	border: 1px solid black; border-radius: 6px;
 	padding: 5px;
 	margin-bottom: 20px;
@@ -17,7 +17,7 @@ div#wrapper {
 .item-title {
 	font-size: 1.4em;
 }
-.readable-item img {
+article img {
 	max-width: 100%;
 }
 button, summary {
@@ -32,9 +32,9 @@ summary:focus {
 </style>
 </head>
 <body>
-<div id="wrapper">
+<main>
 
-<div class="readable-item">
+<article>
 <details open>
 <summary><span class="item-title">Channels</span></summary>
 {% if not channels %}
@@ -46,9 +46,9 @@ summary:focus {
 {% endif %}
 <p><a href="{{ url_for('channels_edit') }}">Edit channels</a></p>
 </details>
-</div>
+</article>
 
-<div class="readable-item">
+<article>
 <details open>
 <summary><span class="item-title">Sources</span></summary>
 {% if not sources %}
@@ -59,9 +59,9 @@ summary:focus {
 {% endfor %}
 {% endif %}
 </details>
-</div>
+</article>
 
-<div class="readable-item">
+<article>
 <details open>
 <summary><span class="item-title">Add item</span></summary>
 <form action="add" method="post">
@@ -90,8 +90,8 @@ summary:focus {
 <input type="submit" value="Add">
 </form>
 </details>
-</div>
+</article>
 
-</div>
+</main>
 </body>
 </html>

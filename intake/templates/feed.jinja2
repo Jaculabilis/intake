@@ -4,11 +4,11 @@
 <title>Intake{% if items %} ({{ items|length }}){% endif %}</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMS41ZEdYUgAAAGFJREFUOE+lkFEKwDAIxXrzXXB3ckMm9EnAV/YRCxFCcUXEL3Jc77NDjpDA/VGL3RFWYEICfeGC8oQc9IPuCAnQDcoRVmBCAn3hgvKEHPSD7ggJ0A3KEVZgQgJ94YLSJ9YDUzNGDXGZ/JEAAAAASUVORK5CYII=">
 <style>
-div#wrapper {
+main {
 	max-width: 700px;
 	margin: 0 auto;
 }
-.readable-item {
+article {
 	border: 1px solid black; border-radius: 6px;
 	padding: 5px;
 	margin-bottom: 20px;
@@ -33,7 +33,7 @@ div#wrapper {
 .item-info {
 	color: rgba(0, 0, 0, 0.7);
 }
-.readable-item img {
+article img {
 	max-width: 100%;
 }
 button, summary {
@@ -120,13 +120,13 @@ var doAction = function (source, itemid, action) {
 </script>
 </head>
 <body>
-<div id="wrapper">
-<div class="readable-item center">
+<main>
+<article class="center">
 <span class="item-title"><a href="{{url_for('root')}}">Home</a></span>
-</div>
+</article>
 {% if items %}
 {% for item in items %}
-	<div class="readable-item
+	<article class="
 	{%- if not item.active %} strikethru{% endif %}
 	{%- if item.is_hidden %} fade{% endif -%}
 	" id="{{item.source}}-{{item.id}}">
@@ -173,30 +173,30 @@ var doAction = function (source, itemid, action) {
 	</span>
 	{% endif %}
 
-	</div>
+	</article>
 {% endfor %}
 
 {% if pager_prev or pager_next %}
-<div class="readable-item center">
+<article class="center">
 <span class="item-title">
 <a {% if pager_prev -%} href="{{pager_prev}}" {%- endif %}>Prev</a> |  <a {% if pager_next -%} href="{{pager_next}}" {%- endif %}>Next</a>
 </span>
-</div>
+</article>
 {% endif %}
 
-<div class="readable-item">
+<article>
 <div style="text-align:center;">
 <button onclick="javascript:mdeactivate({{ mdeac|safe }})">Deactivate All</button>
 </div>
-</div>
+</article>
 
 {# if items #}
 {% else %}
-<div class="readable-item center">
+<article class="center">
 <span class="item-title">Feed is empty</span>
-</div>
+</article>
 {% endif %}
 
-</div>
+</main>
 </body>
 </html>
