@@ -224,7 +224,10 @@ def cmd_feed(cmd_args):
         for name in args.sources
         if (data / name / "intake.json").exists()
     ]
-    items = [item for source in sources for item in source.get_all_items()]
+    items = sorted(
+        [item for source in sources for item in source.get_all_items()],
+        key=lambda item: item.sort_key,
+    )
 
     if not items:
         print("Feed is empty")
@@ -234,7 +237,7 @@ def cmd_feed(cmd_args):
     width = min(80, size.columns)
 
     for item in items:
-        title = item["title"] if "title" in item else ""
+        title = item.display_title
         titles = [title]
         while len(titles[-1]) > width - 4:
             i = titles[-1][: width - 4].rfind(" ")

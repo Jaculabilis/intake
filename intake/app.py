@@ -8,7 +8,7 @@ import time
 
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 
-from intake.source import LocalSource, execute_action
+from intake.source import LocalSource, execute_action, Item
 
 # Globals
 app = Flask(__name__)
@@ -24,18 +24,8 @@ def intake_data_dir() -> Path:
     raise Exception("No intake data directory defined")
 
 
-def item_sort_key(item):
-    item_date = item.get("time", item.get("created", 0))
-    return (item_date, item["id"])
-
-
-def show_item(item):
-    """
-    Whether to show an item based on active and tts.
-    """
-    return item["active"] and (
-        "tts" not in item or item["created"] + item["tts"] < int(time.time())
-    )
+def item_sort_key(item: Item):
+    return item.sort_key
 
 
 @app.template_filter("datetimeformat")
@@ -80,9 +70,7 @@ def source_feed(name):
     if not source.source_path.exists():
         abort(404)
 
-    return _sources_feed(
-        name, [source], show_hidden=request.args.get("hidden", True)
-    )
+    return _sources_feed(name, [source], show_hidden=request.args.get("hidden", True))
 
 
 @app.get("/channel/<string:name>")
@@ -98,9 +86,7 @@ def channel_feed(name):
         abort(404)
     sources = [LocalSource(intake_data_dir(), name) for name in channels[name]]
 
-    return _sources_feed(
-        name, sources, show_hidden=request.args.get("hidden", False)
-    )
+    return _sources_feed(name, sources, show_hidden=request.args.get("hidden", False))
 
 
 def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
@@ -113,7 +99,7 @@ def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
             item
             for source in sources
             for item in source.get_all_items()
-            if show_item(item) or show_hidden
+            if not item.is_hidden or show_hidden
         ],
         key=item_sort_key,
     )
@@ -308,21 +294,17 @@ def add_item():
         source_path.mkdir()
     config_path = source_path / "intake.json"
     if not config_path.exists():
-        config_path.write_text(json.dumps({
-            "action": {
-                "fetch": {
-                    "exe": "true"
-                }
-            }
-        }, indent=2))
+        config_path.write_text(
+            json.dumps({"action": {"fetch": {"exe": "true"}}}, indent=2)
+        )
     source = LocalSource(source_path.parent, source_path.name)
 
     # Clean up the fields
-    item = {key: value for key, value in request.form.items() if value}
-    item["id"] = '{:x}'.format(getrandbits(16 * 4))
+    fields = {key: value for key, value in request.form.items() if value}
+    fields["id"] = "{:x}".format(getrandbits(16 * 4))
     # TODO: this doesn't support tags or ttX fields correctly
-
-    source.new_item(item)
+    item = Item.create(source, **fields)
+    source.save_item(item)
 
     return redirect(url_for("source_feed", name="default"))
 

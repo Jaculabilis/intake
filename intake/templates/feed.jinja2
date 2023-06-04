@@ -127,8 +127,8 @@ var doAction = function (source, itemid, action) {
 {% if items %}
 {% for item in items %}
 	<div class="readable-item
-	{%- if not item.active %} strikethru fade{% endif %}
-	{%- if item.active and item.tts and item.created + item.tts > now %} fade{% endif -%}
+	{%- if not item.active %} strikethru{% endif %}
+	{%- if item.is_hidden %} fade{% endif -%}
 	" id="{{item.source}}-{{item.id}}">
 	{% if item.id %}
 	<button class="item-button" onclick="javascript:deactivate('{{item.source}}', '{{item.id}}')" title="Deactivate">&#10005;</button>
@@ -143,7 +143,7 @@ var doAction = function (source, itemid, action) {
 	{# The item title is a clickable <summary> if there is body content #}
 	{% if item.body or item.action %}
 	<details>
-	<summary><span class="item-title">{{item.title}}</span></summary>
+	<summary><span class="item-title">{{item.display_title}}</span></summary>
 	{% if item.body %}
 	<p>{{item.body|safe}}</p>
 	{% endif %}
@@ -152,7 +152,7 @@ var doAction = function (source, itemid, action) {
 	{% endfor %}
 	</details>
 	{% else %}
-	<span class="item-title">{{item.title}}</span><br>
+	<span class="item-title">{{item.display_title}}</span><br>
 	{% endif %}
 
 	{# author/time footer line #}
