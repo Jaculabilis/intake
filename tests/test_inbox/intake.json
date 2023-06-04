@@ -1,0 +1,8 @@
+{
+  "action": {
+    "fetch": {
+      "exe": "./update.py",
+      "args": ["fetch"]
+    }
+  }
+}

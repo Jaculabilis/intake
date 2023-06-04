@@ -9,14 +9,18 @@ args = parser.parse_args()
 print("args:", args, file=sys.stderr, flush=True)
 
 if args.action == "fetch":
-    print(json.dumps({
-        "id": "updateme",
-        "title": "The count is at 1",
-        "action": {
-            "increment": 1,
-            "decrement": "",
-        }
-    }))
+    print(
+        json.dumps(
+            {
+                "id": "updateme",
+                "title": "The count is at 1",
+                "action": {
+                    "increment": 1,
+                    "decrement": "",
+                },
+            }
+        )
+    )
 
 if args.action == "increment":
     item = sys.stdin.readline()

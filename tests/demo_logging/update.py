@@ -6,10 +6,7 @@ import sys
 import time
 
 greeting = os.environ.get("HELLO", "MISSING")
-item = json.dumps({
-    "id": "helloworld",
-    "title": "Hello = " + greeting
-})
+item = json.dumps({"id": "helloworld", "title": "Hello = " + greeting})
 sys.stdout.write(item[:10])
 sys.stdout.flush()
 
