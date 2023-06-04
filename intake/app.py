@@ -124,7 +124,7 @@ def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
         items=paged_items,
         now=int(time.time()),
         mdeac=[
-            {"source": item["source"], "itemid": item["id"]}
+            {"source": item.source.source_name, "itemid": item["id"]}
             for item in paged_items
             if "id" in item
         ],

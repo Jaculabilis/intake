@@ -62,7 +62,6 @@ All encoding is done with UTF-8. If an item cannot be parsed or the exit code of
 An item has the following top-level fields:
 
 * `id`: **Required**. A unique identifier within the scope of the feed source.
-* `source`: **Automatic**. The source that generated the item. This attribute is automatically populated.
 * `created`: **Automatic**. The Unix timestamp at which the item was generated. This attribute is automatically populated.
 * `active`: **Automatic**. Whether the item is active. Inactive items are not displayed in channels.
 * `title`: The title of the item. If an item has no title, `is` is used as a fallback title.

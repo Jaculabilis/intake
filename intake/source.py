@@ -42,7 +42,6 @@ class Item:
             raise KeyError("id")
         item = {
             "id": fields["id"],
-            "source": source.source_name,
             "created": int(current_time()),
             "active": True,
         }

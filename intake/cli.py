@@ -256,7 +256,7 @@ def cmd_feed(cmd_args):
         created_dt = datetime.fromtimestamp(item["created"])
         created = created_dt.strftime("%Y-%m-%d %H:%M:%S")
         info2 = "{0}  {1}  {2}".format(
-            item.get("source", ""), item.get("id", ""), created
+            item.source.source_name, item.get("id", ""), created
         )
         print("| {0:<{1}} |".format(info2, width - 4))
         print("+" + (width - 2) * "-" + "+")
