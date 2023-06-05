@@ -16,6 +16,26 @@
         "type": "github"
       }
     },
+    "nixos-shell": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1683035198,
+        "narHash": "sha256-5hHkokfSY3Z4VqjNm/j564l9Bgynw5H5McX0hTruGoI=",
+        "owner": "Mic92",
+        "repo": "nixos-shell",
+        "rev": "2cb76875e501eccb012625546864dd0085750843",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "nixos-shell",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1669833724,
@@ -35,6 +55,7 @@
     "root": {
       "inputs": {
         "flake-compat": "flake-compat",
+        "nixos-shell": "nixos-shell",
         "nixpkgs": "nixpkgs"
       }
     }

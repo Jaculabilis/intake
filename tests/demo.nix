@@ -1,5 +1,7 @@
-{ pkgs, ... }: {
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+{ pkgs, ... }:
+
+{
+  system.stateVersion = "22.11";
 
   nixos-shell.mounts = {
     mountHome = false;

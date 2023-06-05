@@ -3,14 +3,20 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/22.11";
+    # Included to support default.nix and shell.nix
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
+    # Included to support the integration test in tests/demo.nix
+    nixos-shell.url = "github:Mic92/nixos-shell";
+    nixos-shell.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, flake-compat }:
-  let system = "x86_64-linux";
+  outputs = { self, nixpkgs, flake-compat, nixos-shell }:
+  let
+    inherit (nixpkgs.lib) makeOverridable nixosSystem;
+    system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
   in {
     packages.${system} = {
@@ -37,6 +43,17 @@
     templates.source = {
       path = builtins.path { path = ./template; name = "source"; };
       description = "A basic intake source config";
+    };
+
+    nixosModules.intake = import ./module.nix self;
+
+    nixosConfigurations."demo" = makeOverridable nixosSystem {
+      inherit system;
+      modules = [
+        nixos-shell.nixosModules.nixos-shell
+        self.nixosModules.intake
+        ./tests/demo.nix
+      ];
     };
   };
 }
