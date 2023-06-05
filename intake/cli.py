@@ -279,6 +279,10 @@ def cmd_run(cmd_args):
     parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args(cmd_args)
 
+    # Hack: the web server isn't wired up to take this configuration value
+    # directly, but it will work to stuff it  into the first env checked
+    os.environ["INTAKE_DATA"] = args.data
+
     try:
         from intake.app import app
 
