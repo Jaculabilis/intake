@@ -33,5 +33,10 @@
         '';
       };
     };
+
+    templates.source = {
+      path = builtins.path { path = ./template; name = "source"; };
+      description = "A basic intake source config";
+    };
   };
 }
