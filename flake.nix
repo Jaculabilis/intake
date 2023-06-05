@@ -52,7 +52,7 @@
       modules = [
         nixos-shell.nixosModules.nixos-shell
         self.nixosModules.intake
-        ./tests/demo.nix
+        (import ./tests/demo.nix self)
       ];
     };
   };
