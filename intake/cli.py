@@ -281,7 +281,7 @@ def cmd_run(cmd_args):
 
     # Hack: the web server isn't wired up to take this configuration value
     # directly, but it will work to stuff it  into the first env checked
-    os.environ["INTAKE_DATA"] = args.data
+    os.environ["INTAKE_DATA"] = str(args.data)
 
     try:
         from intake.app import app
