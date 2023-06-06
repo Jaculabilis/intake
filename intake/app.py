@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from functools import wraps
 from pathlib import Path
 from random import getrandbits
 from typing import List
@@ -36,7 +37,28 @@ def datetimeformat(value):
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def auth_check(route):
+    """
+    Checks the HTTP Basic Auth header against the stored credential.
+    """
+    @wraps(route)
+    def _route(*args, **kwargs):
+        data_path = intake_data_dir()
+        auth_path = data_path / "credentials.json"
+        if auth_path.exists():
+            if not request.authorization:
+                abort(403)
+            auth = json.load(auth_path.open(encoding="utf8"))
+            if request.authorization.username != auth["username"]:
+                abort(403)
+            if request.authorization.password != auth["secret"]:
+                abort(403)
+        return route(*args, **kwargs)
+    return _route
+
+
 @app.get("/")
+@auth_check
 def root():
     """
     Navigation home page.
@@ -62,6 +84,7 @@ def root():
 
 
 @app.get("/source/<string:name>")
+@auth_check
 def source_feed(name):
     """
     Feed view for a single source.
@@ -74,6 +97,7 @@ def source_feed(name):
 
 
 @app.get("/channel/<string:name>")
+@auth_check
 def channel_feed(name):
     """
     Feed view for a channel.
@@ -134,6 +158,7 @@ def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
 
 
 @app.delete("/item/<string:source_name>/<string:item_id>")
+@auth_check
 def deactivate(source_name, item_id):
     source = LocalSource(intake_data_dir(), source_name)
     item = source.get_item(item_id)
@@ -145,6 +170,7 @@ def deactivate(source_name, item_id):
 
 
 @app.patch("/item/<string:source_name>/<string:item_id>")
+@auth_check
 def update(source_name, item_id):
     source = LocalSource(intake_data_dir(), source_name)
     item = source.get_item(item_id)
@@ -159,6 +185,7 @@ def update(source_name, item_id):
 
 
 @app.post("/mass-deactivate/")
+@auth_check
 def mass_deactivate():
     params = request.get_json()
     if "items" not in params:
@@ -176,6 +203,7 @@ def mass_deactivate():
 
 
 @app.post("/action/<string:source_name>/<string:item_id>/<string:action>")
+@auth_check
 def action(source_name, item_id, action):
     source = LocalSource(intake_data_dir(), source_name)
     item = execute_action(source, item_id, action)
@@ -183,6 +211,7 @@ def action(source_name, item_id, action):
 
 
 @app.route("/edit/source/<string:name>", methods=["GET", "POST"])
+@auth_check
 def source_edit(name):
     """
     Config editor for a source
@@ -237,6 +266,7 @@ def _parse_source_config(config_str: str):
 
 
 @app.route("/edit/channels", methods=["GET", "POST"])
+@auth_check
 def channels_edit():
     """
     Config editor for channels
@@ -287,6 +317,7 @@ def _parse_channels_config(config_str: str):
 
 
 @app.post("/add")
+@auth_check
 def add_item():
     # Ensure the default source exists
     source_path = intake_data_dir() / "default"
