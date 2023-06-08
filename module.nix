@@ -14,7 +14,7 @@ in {
 
       listen.port = mkOption {
         type = types.port;
-        default = 8032;
+        default = 80;
         description = "The listen port for the entry point to intake services. This endpoint will redirect to a local port based on the request's HTTP Basic Auth credentials.";
       };
 
@@ -84,7 +84,7 @@ in {
         listen = [ intakeCfg.listen ];
         locations."/" = {
           proxyPass = "http://127.0.0.1:$target_port";
-          basicAuth = { alpha = "alpha"; beta = "beta"; };
+          basicAuth = { alice = "alpha"; bob = "beta"; };
         };
         extraConfig = foldl (acc: val: acc + val) "" (mapAttrsToList (userName: port: ''
           if ($remote_user = "${userName}") {
