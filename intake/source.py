@@ -142,6 +142,9 @@ class LocalSource:
         self.source_name = source_name
         self.source_path: Path = data_path / source_name
 
+    def __str__(self) -> str:
+        return self.source_name
+
     def get_config(self) -> dict:
         config_path = self.source_path / "intake.json"
         with open(config_path, "r", encoding="utf8") as config_file:
