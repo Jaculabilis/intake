@@ -1,11 +1,8 @@
 {
   "action": {
     "fetch": {
-      "exe": "sh",
-      "args": [
-        "-c",
-        "echo {\\\"id\\\": \\\"$(date +%Y-%m-%d-%H-%M)\\\"}"
-      ]
+      "exe": "currenttime.sh",
+      "args": []
     }
   }
 }

@@ -1,0 +1,11 @@
+{
+  "action": {
+    "fetch": {
+      "exe": "echo.py",
+      "args": []
+    }
+  },
+  "env": {
+    "MESSAGE": "Hello, Bob!"
+  }
+}

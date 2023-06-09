@@ -40,19 +40,22 @@ flake: { pkgs, ... }:
     extraMounts = {
       "/mnt/alice" = ./alice;
       "/mnt/bob" = ./bob;
+      "/mnt/sources" = ./sources;
     };
   };
 
   # Create an activation script that copies and chowns the demo content
+  # chmod 777 because the users may not exist when the activation script runs
   system.activationScripts.demoSetup = ''
     ${pkgs.coreutils}/bin/mkdir -p /home/alice/.local/share/intake
     ${pkgs.coreutils}/bin/cp -r /mnt/alice/* /home/alice/.local/share/intake/
-    ${pkgs.coreutils}/bin/chgrp -R users /home/alice
-    ${pkgs.coreutils}/bin/chmod -R 775 /home/alice/.local
+    ${pkgs.coreutils}/bin/chmod -R 777 /home/alice/.local
 
     ${pkgs.coreutils}/bin/mkdir -p /home/bob/.local/share/intake
     ${pkgs.coreutils}/bin/cp -r /mnt/bob/* /home/bob/.local/share/intake/
-    ${pkgs.coreutils}/bin/chgrp -R users /home/bob
-    ${pkgs.coreutils}/bin/chmod -R 775 /home/bob/.local
+    ${pkgs.coreutils}/bin/chmod -R 777 /home/bob/.local
   '';
+
+  # Put the demo sources on the global PATH
+  environment.variables.PATH = "/mnt/sources";
 }
