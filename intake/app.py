@@ -180,10 +180,10 @@ def update(source_name, item_id):
     if "tts" in params:
         tomorrow = datetime.now() + timedelta(days=1)
         morning = datetime(tomorrow.year, tomorrow.month, tomorrow.day, 6, 0, 0)
-        til_then = morning.timestamp() - item["created"]
+        til_then = int(morning.timestamp()) - item["created"]
         item["tts"] = til_then
     source.save_item(item)
-    return jsonify(item)
+    return jsonify(item._item)
 
 
 @app.post("/mass-deactivate/")
