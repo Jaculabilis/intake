@@ -66,12 +66,6 @@ class Item:
         return self._item.get("title", self._item["id"])
 
     @property
-    def abs_tts(self):
-        if "tts" not in self._item:
-            return None
-        return self._item["created"] + self._item["tts"]
-
-    @property
     def can_remove(self):
         # The time-to-live fields protects an item from removal until expiry.
         # This is mainly used to avoid old items resurfacing when their source
@@ -94,7 +88,7 @@ class Item:
     def before_tts(self):
         return (
             "tts" in self._item
-            and self._item["created"] + self._item["tts"] < current_time()
+            and current_time() < self._item["created"] + self._item["tts"]
         )
 
     @property
