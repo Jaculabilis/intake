@@ -2,9 +2,11 @@ from datetime import datetime
 from pathlib import Path
 from shutil import get_terminal_size
 import argparse
+import getpass
 import json
 import os
 import os.path
+import pwd
 import subprocess
 import sys
 
@@ -261,6 +263,44 @@ def cmd_feed(cmd_args):
         print("| {0:<{1}} |".format(info2, width - 4))
         print("+" + (width - 2) * "-" + "+")
         print()
+
+
+def cmd_passwd(cmd_args):
+    """Update password for the web interface."""
+    parser = argparse.ArgumentParser(
+        prog="intake passwd",
+        description=cmd_passwd.__doc__,
+    )
+    parser.add_argument(
+        "--data",
+        "-d",
+        default=intake_data_dir(),
+        help="Path to the intake data directory",
+    )
+    args = parser.parse_args(cmd_args)
+
+    command_exists = subprocess.run(["command", "-v" "htpasswd"], shell=True)
+    if command_exists.returncode:
+        print("Could not find htpasswd, cannot update password")
+        return 1
+
+    creds = Path(args.data) / "credentials.json"
+    if not creds.parent.exists():
+        creds.parent.mkdir(parents=True)
+
+    user = pwd.getpwuid(os.getuid()).pw_name
+    password = getpass.getpass(f"intake password for {user}: ")
+    update_pwd = subprocess.run(
+        ["htpasswd", "-b", "/etc/intake/htpasswd", user, password]
+    )
+    if update_pwd.returncode:
+        print("Could not update password file")
+        return 1
+
+    new_creds = {"username": user, "secret": password}
+    creds.write_text(json.dumps(new_creds, indent=2))
+
+    return 0
 
 
 def cmd_run(cmd_args):

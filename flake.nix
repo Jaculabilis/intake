@@ -33,7 +33,12 @@
       default = let
         pythonEnv = pkgs.python38.withPackages (pypkgs: with pypkgs; [ flask black pytest ]);
       in pkgs.mkShell {
-        packages = [ pythonEnv pkgs.nixos-shell ];
+        packages = [
+          pythonEnv
+          pkgs.nixos-shell
+          # We only take this dependency for htpasswd, which is a little unfortunate
+          pkgs.apacheHttpd
+        ];
         shellHook = ''
           PS1="(develop) $PS1"
         '';

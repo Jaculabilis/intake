@@ -41,19 +41,21 @@ def auth_check(route):
     """
     Checks the HTTP Basic Auth header against the stored credential.
     """
+
     @wraps(route)
     def _route(*args, **kwargs):
         data_path = intake_data_dir()
         auth_path = data_path / "credentials.json"
         if auth_path.exists():
             if not request.authorization:
-                abort(403)
+                abort(401)
             auth = json.load(auth_path.open(encoding="utf8"))
             if request.authorization.username != auth["username"]:
                 abort(403)
             if request.authorization.password != auth["secret"]:
                 abort(403)
         return route(*args, **kwargs)
+
     return _route
 
 

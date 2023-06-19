@@ -9,19 +9,22 @@ in {
       listen.addr = mkOption {
         type = types.str;
         default = "0.0.0.0";
-        description = "The listen address for the entry point to intake services. This endpoint will redirect to a local port based on the request's HTTP Basic Auth credentials.";
+        description = "The listen address for the entry point to intake services. This endpoint will redirect to a "
+        "local port based on the request's HTTP Basic Auth credentials.";
       };
 
       listen.port = mkOption {
         type = types.port;
         default = 80;
-        description = "The listen port for the entry point to intake services. This endpoint will redirect to a local port based on the request's HTTP Basic Auth credentials.";
+        description = "The listen port for the entry point to intake services. This endpoint will redirect to a local "
+        "port based on the request's HTTP Basic Auth credentials.";
       };
 
       internalPortStart = mkOption {
         type = types.port;
         default = 24130;
-        description = "The first port to use for internal service endpoints. A number of ports will be continguously allocated equal to the number of users with enabled intake services.";
+        description = "The first port to use for internal service endpoints. A number of ports will be continguously "
+        "allocated equal to the number of users with enabled intake services.";
       };
 
       users = mkOption {
@@ -53,7 +56,39 @@ in {
     enabledUserNames = mapAttrsToList (userName: userCfg: userName) enabledUsers;
     userPortList = imap1 (i: userName: { ${userName} = i + intakeCfg.internalPortStart; }) enabledUserNames;
     userPort = foldl (acc: val: acc // val) {} userPortList;
+
+    # To avoid polluting PATH with httpd programs, define an htpasswd wrapper
+    htpasswdWrapper = pkgs.writeShellScriptBin "htpasswd" ''
+      ${pkgs.apacheHttpd}/bin/htpasswd $@
+    '';
+
+    # File locations
+    intakeDir = "/etc/intake";
+    intakePwd = "${intakeDir}/htpasswd";
   in {
+    # Define a user group for access to the htpasswd file.
+    users.groups.intake.members = mkIf (enabledUsers != {}) (enabledUserNames ++ [ "nginx" ]);
+
+    # Define an activation script that ensures that the htpasswd file exists.
+    system.activationScripts.etc-intake = ''
+      if [ ! -e ${intakeDir} ]; then
+        ${pkgs.coreutils}/bin/mkdir -p ${intakeDir};
+      fi
+      ${pkgs.coreutils}/bin/chown root:root ${intakeDir}
+      ${pkgs.coreutils}/bin/chmod 755 ${intakeDir}
+      if [ ! -e ${intakePwd} ]; then
+        ${pkgs.coreutils}/bin/touch ${intakePwd}
+      fi
+      ${pkgs.coreutils}/bin/chown root:intake ${intakePwd}
+      ${pkgs.coreutils}/bin/chmod 660 ${intakePwd}
+    '';
+
+    # Give the htpasswd wrapper to every intake user
+    users.users =
+    let
+      addWrapperToUser = userName: { ${userName}.packages = [ htpasswdWrapper ]; };
+    in mkMerge (map addWrapperToUser enabledUserNames);
+
     # Define a user service for each configured user
     systemd.services =
     let
@@ -84,7 +119,7 @@ in {
         listen = [ intakeCfg.listen ];
         locations."/" = {
           proxyPass = "http://127.0.0.1:$target_port";
-          basicAuth = { alice = "alpha"; bob = "beta"; };
+          basicAuthFile = intakePwd;
         };
         extraConfig = foldl (acc: val: acc + val) "" (mapAttrsToList (userName: port: ''
           if ($remote_user = "${userName}") {
