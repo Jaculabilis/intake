@@ -57,7 +57,7 @@ pre {
 table.feed-control td {
 	font-family: monospace; padding: 5px 10px;
 }
-div.center {
+article.center {
 	text-align: center;
 }
 </style>
@@ -122,7 +122,15 @@ var doAction = function (source, itemid, action) {
 <body>
 <main>
 <article class="center">
-<span class="item-title"><a href="{{url_for('root')}}">Home</a></span>
+<span class="item-title">
+<a href="{{url_for('root')}}">Home</a>
+[<a href="{{ set_query(hidden='false', page=None, count=None) }}">Active</a> | <a href="{{ set_query(hidden='true', page=None, count=None) }}">All</a>]
+{% if item_count > items|length -%}
+[<a {% if page_num is greaterthan(0) -%} href="{{ set_query(page=page_num - 1) }}" {%- endif %}>Prev</a>
+|
+<a {% if ((page_num + 1) * page_count) is lessthan(item_count) -%} href="{{ set_query(page=page_num + 1) }}" {%- endif %}>Next</a>]
+{%- endif %}
+</span>
 </article>
 {% if items %}
 {% for item in items %}
@@ -176,18 +184,18 @@ var doAction = function (source, itemid, action) {
 	</article>
 {% endfor %}
 
-{% if pager_prev or pager_next %}
+{% if item_count > items|length %}
 <article class="center">
 <span class="item-title">
-<a {% if pager_prev -%} href="{{pager_prev}}" {%- endif %}>Prev</a> |  <a {% if pager_next -%} href="{{pager_next}}" {%- endif %}>Next</a>
+<a {% if page_num is greaterthan(0) -%} href="{{ set_query(page=page_num - 1) }}" {%- endif %}>Prev</a>
+|
+<a {% if ((page_num + 1) * page_count) is lessthan(item_count) -%} href="{{ set_query(page=page_num + 1) }}" {%- endif %}>Next</a>
 </span>
 </article>
 {% endif %}
 
-<article>
-<div style="text-align:center;">
+<article class="center">
 <button onclick="javascript:mdeactivate({{ mdeac|safe }})">Deactivate All</button>
-</div>
 </article>
 
 {# if items #}

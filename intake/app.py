@@ -29,12 +29,39 @@ def item_sort_key(item: Item):
     return item.sort_key
 
 
+def get_show_hidden(default: bool):
+    """
+    Get the value of the ?hidden query parameter, with a default value if it is
+    absent or set to an unnown value.
+    """
+    hidden = request.args.get("hidden")
+    if hidden == "true":
+        return True
+    if hidden == "false":
+        return False
+    return default
+
+
 @app.template_filter("datetimeformat")
 def datetimeformat(value):
     if not value:
         return ""
     dt = datetime.fromtimestamp(value)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+@app.template_global()
+def set_query(**kwargs):
+    """
+    Helper function to create a URL plus or minus some query parameters.
+    """
+    args = request.args.copy()
+    for key, val in kwargs.items():
+        if val is None and key in args:
+            del args[key]
+        else:
+            args[key] = val
+    return url_for(request.endpoint, **request.view_args, **args)
 
 
 def auth_check(route):
@@ -95,7 +122,7 @@ def source_feed(name):
     if not source.source_path.exists():
         abort(404)
 
-    return _sources_feed(name, [source], show_hidden=request.args.get("hidden", True))
+    return _sources_feed(name, [source], show_hidden=get_show_hidden(True))
 
 
 @app.get("/channel/<string:name>")
@@ -112,7 +139,7 @@ def channel_feed(name):
         abort(404)
     sources = [LocalSource(intake_data_dir(), name) for name in channels[name]]
 
-    return _sources_feed(name, sources, show_hidden=request.args.get("hidden", False))
+    return _sources_feed(name, sources, show_hidden=get_show_hidden(False))
 
 
 def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
@@ -154,8 +181,9 @@ def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
             for item in paged_items
             if "id" in item
         ],
-        pager_prev=pager_prev,
-        pager_next=pager_next,
+        page_num=page,
+        page_count=count,
+        item_count=len(all_items),
     )
 
 
@@ -340,11 +368,7 @@ def add_item():
     if form_body := request.form.get("body"):
         fields["body"] = form_body
     if form_tags := request.form.get("tags"):
-        fields["tags"] = [
-            tag.strip()
-            for tag in form_tags.split()
-            if tag.strip()
-        ]
+        fields["tags"] = [tag.strip() for tag in form_tags.split() if tag.strip()]
     if form_tts := request.form.get("tts"):
         fields["tts"] = _get_ttx_for_date(datetime.fromisoformat(form_tts))
     if form_ttl := request.form.get("ttl"):
