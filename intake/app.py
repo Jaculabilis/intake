@@ -332,14 +332,37 @@ def add_item():
         )
     source = LocalSource(source_path.parent, source_path.name)
 
-    # Clean up the fields
-    fields = {key: value for key, value in request.form.items() if value}
-    fields["id"] = "{:x}".format(getrandbits(16 * 4))
-    # TODO: this doesn't support tags or ttX fields correctly
+    fields = {"id": "{:x}".format(getrandbits(16 * 4))}
+    if form_title := request.form.get("title"):
+        fields["title"] = form_title
+    if form_link := request.form.get("link"):
+        fields["link"] = form_link
+    if form_body := request.form.get("body"):
+        fields["body"] = form_body
+    if form_tags := request.form.get("tags"):
+        fields["tags"] = [
+            tag.strip()
+            for tag in form_tags.split()
+            if tag.strip()
+        ]
+    if form_tts := request.form.get("tts"):
+        fields["tts"] = _get_ttx_for_date(datetime.fromisoformat(form_tts))
+    if form_ttl := request.form.get("ttl"):
+        fields["ttl"] = _get_ttx_for_date(datetime.fromisoformat(form_ttl))
+    if form_ttd := request.form.get("ttd"):
+        fields["ttd"] = _get_ttx_for_date(datetime.fromisoformat(form_ttd))
+
     item = Item.create(source, **fields)
     source.save_item(item)
 
     return redirect(url_for("source_feed", name="default"))
+
+
+def _get_ttx_for_date(dt: datetime) -> int:
+    """Get the relative time difference between now and a date."""
+    ts = int(dt.timestamp())
+    now = int(time.time())
+    return ts - now
 
 
 def wsgi():

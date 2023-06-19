@@ -29,6 +29,10 @@ summary {
 summary:focus {
 	outline: 1px dotted gray;
 }
+.wide {
+	width: 100%;
+	resize: vertical;
+}
 </style>
 </head>
 <body>
@@ -65,28 +69,35 @@ summary:focus {
 <details open>
 <summary><span class="item-title">Add item</span></summary>
 <form action="add" method="post">
-<label for="title">Title</label>
-<input type="text" name="title">
-<br>
-<label for="body">Body</label>
-<br>
-<textarea name="body"></textarea>
-<br>
-<label for="link">Link</label>
-<input type="text" name="link">
-<br>
-<label for="tags">Tags</label>
-<input type="text" name="tags">
-<br>
-<label for="tts">TTS</label>
-<input type="text" name="tts">
-<br>
-<label for="ttl">TTL</label>
-<input type="text" name="ttl">
-<br>
-<label for="ttd">TTD</label>
-<input type="text" name="ttd">
-<br>
+<p>
+{# <label for="title">Title</label> #}
+<input type="text" name="title" class="wide" placeholder="Title">
+</p>
+<p>
+{# <label for="link">Link</label> #}
+<input type="url" name="link" class="wide" placeholder="Link">
+</p>
+<p>
+{# <label for="body">Body</label> #}
+<textarea name="body" class="wide" placeholder="Body"></textarea>
+</p>
+<p>
+{# <label for="tags">Tags</label> #}
+<input type="text" name="tags" class="wide" placeholder="Tags, comma-separated">
+</p>
+<p>
+<label for="tts">TTS:</label>
+<input type="datetime-local" name="tts">
+</p>
+<p>
+<label for="ttl">TTL:</label>
+<input type="datetime-local" name="ttl">
+</p>
+<p>
+<label for="ttd">TTD:</label>
+<input type="datetime-local" name="ttd">
+</p>
+<p>
 <input type="submit" value="Add">
 </form>
 </details>
