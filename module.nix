@@ -1,7 +1,7 @@
-flake: { config, lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
-  inherit (lib) filterAttrs foldl imap1 mapAttrsToList mkEnableOption mkIf mkMerge mkOption types;
+  inherit (lib) filterAttrs foldl imap1 mapAttrsToList mkEnableOption mkIf mkMerge mkOption mkPackageOption types;
   intakeCfg = config.services.intake;
 in {
   options = {
@@ -19,6 +19,8 @@ in {
         description = "The listen port for the entry point to intake services. This endpoint will redirect to a local "
         "port based on the request's HTTP Basic Auth credentials.";
       };
+
+      package = mkPackageOption pkgs "intake" {};
 
       internalPortStart = mkOption {
         type = types.port;
@@ -48,7 +50,7 @@ in {
   config =
   let
     # Define the intake package and a python environment to run it from
-    intake = flake.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    intake = intakeCfg.package;
     pythonEnv = pkgs.python38.withPackages (pypkgs: [ intake ]);
 
     # Assign each user an internal port for their personal intake instance

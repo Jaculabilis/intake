@@ -64,7 +64,7 @@
       config.nixpkgs.overlays = [ self.overlays.default ];
     };
 
-    nixosModules.intake = import ./module.nix self;
+    nixosModules.intake = import ./module.nix;
 
     nixosConfigurations."demo" = makeOverridable nixosSystem {
       inherit system;
