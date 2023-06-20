@@ -59,19 +59,13 @@
       description = "A basic intake source config";
     };
 
-    nixosModules.default = {
-      options = {};
-      config.nixpkgs.overlays = [ self.overlays.default ];
-    };
-
-    nixosModules.intake = import ./module.nix;
+    nixosModules.default = import ./module.nix self;
 
     nixosConfigurations."demo" = makeOverridable nixosSystem {
       inherit system;
       modules = [
         nixos-shell.nixosModules.nixos-shell
         self.nixosModules.default
-        self.nixosModules.intake
         ./demo
       ];
     };

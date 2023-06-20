@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+flake: { config, lib, pkgs, ... }:
 
 let
   inherit (lib) filterAttrs foldl imap1 mapAttrsToList mkEnableOption mkIf mkMerge mkOption mkPackageOption types;
@@ -68,6 +68,9 @@ in {
     intakeDir = "/etc/intake";
     intakePwd = "${intakeDir}/htpasswd";
   in {
+    # Apply the overlay so intake is included inpkgs.
+    nixpkgs.overlays = [ flake.overlays.default ];
+
     # Define a user group for access to the htpasswd file.
     users.groups.intake.members = mkIf (enabledUsers != {}) (enabledUserNames ++ [ "nginx" ]);
 
