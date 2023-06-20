@@ -1,4 +1,4 @@
-flake: { pkgs, ... }:
+{ pkgs, ... }:
 
 {
   system.stateVersion = "22.11";
@@ -17,7 +17,7 @@ flake: { pkgs, ... }:
   };
 
   # Put intake on both users' PATH
-  environment.systemPackages = [ flake.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+  environment.systemPackages = [ pkgs.intake ];
 
   # Set up intake for both users with an entry point at port 8080
   services.intake = {
