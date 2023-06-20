@@ -2,7 +2,7 @@
   description = "A personal feed aggregator";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/23.05";
     # Included to support default.nix and shell.nix
     flake-compat = {
       url = "github:edolstra/flake-compat";
