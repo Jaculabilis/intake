@@ -17,20 +17,20 @@
   let
     inherit (nixpkgs.lib) makeOverridable nixosSystem;
     system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
   in {
-    packages.${system} = {
+    packages.${system} = let
+      pkgs = (import nixpkgs {
+        inherit system;
+        overlays = [ self.overlays.default ];
+      });
+    in {
       default = self.packages.${system}.intake;
-      intake = pkgs.python38Packages.buildPythonPackage {
-        name = "intake";
-        src = builtins.path { path = ./.; name = "intake"; };
-        format = "pyproject";
-        propagatedBuildInputs = with pkgs.python38Packages; [ flask setuptools ];
-      };
+      inherit (pkgs) intake;
     };
 
     devShells.${system} = {
       default = let
+        pkgs = nixpkgs.legacyPackages.${system};
         pythonEnv = pkgs.python38.withPackages (pypkgs: with pypkgs; [ flask black pytest ]);
       in pkgs.mkShell {
         packages = [
@@ -42,6 +42,15 @@
         shellHook = ''
           PS1="(develop) $PS1"
         '';
+      };
+    };
+
+    overlays.default = final: prev: {
+      intake = final.python38Packages.buildPythonPackage {
+        name = "intake";
+        src = builtins.path { path = ./.; name = "intake"; };
+        format = "pyproject";
+        propagatedBuildInputs = with final.python38Packages; [ flask setuptools ];
       };
     };
 
