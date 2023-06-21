@@ -56,11 +56,12 @@ def cmd_edit(cmd_args):
         with (source_path / "intake.json").open("w") as f:
             json.dump(
                 {
-                    "fetch": {
-                        "exe": "",
-                        "args": [],
+                    "action": {
+                        "fetch": {
+                            "exe": "",
+                            "args": [],
+                        },
                     },
-                    "action": {},
                     "env": {},
                 },
                 f,
