@@ -125,7 +125,7 @@ def cmd_update(cmd_args):
             update_items(source, items)
         else:
             for item in items:
-                print("Item:", item)
+                print("Item:", item._item)
     except InvalidConfigException as ex:
         print("Could not fetch", args.source)
         print(ex)

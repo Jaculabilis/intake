@@ -281,13 +281,13 @@ def _execute_source_action(
     return output
 
 
-def fetch_items(source: LocalSource, timeout: int = 60) -> List[dict]:
+def fetch_items(source: LocalSource, timeout: int = 60) -> List[Item]:
     """
     Execute the feed source and return the current feed items.
     Returns a list of feed items on success.
     Throws SourceUpdateException if the feed source update failed.
     """
-    items = []
+    items: List[Item] = []
 
     output = _execute_source_action(source, "fetch", None, timedelta(timeout))
 
