@@ -29,6 +29,12 @@ in {
         "allocated equal to the number of users with enabled intake services.";
       };
 
+      extraPackages = mkOption {
+        type = types.listOf types.package;
+        default = [];
+        description = "Extra packages available to all enabled users and their intake services.";
+      };
+
       users = mkOption {
         description = "User intake service definitions.";
         default = {};
@@ -36,10 +42,10 @@ in {
           options = {
             enable = mkEnableOption "intake, a personal feed aggregator.";
 
-            packages = mkOption {
+            extraPackages = mkOption {
               type = types.listOf types.package;
               default = [];
-              description = "Additional packages available to the intake service.";
+              description = "Extra packages available to this user and their intake service.";
             };
           };
         });
@@ -71,7 +77,7 @@ in {
     # Apply the overlay so intake is included inpkgs.
     nixpkgs.overlays = [ flake.overlays.default ];
 
-    # Define a user group for access to the htpasswd file.
+    # Define a user group for access to the htpasswd file. nginx needs to be able to read it.
     users.groups.intake.members = mkIf (enabledUsers != {}) (enabledUserNames ++ [ "nginx" ]);
 
     # Define an activation script that ensures that the htpasswd file exists.
@@ -88,11 +94,16 @@ in {
       ${pkgs.coreutils}/bin/chmod 660 ${intakePwd}
     '';
 
-    # Give the htpasswd wrapper to every intake user
+    # Give every intake user the htpasswd wrapper, the shared packages, and the user-specific packages.
     users.users =
     let
-      addWrapperToUser = userName: { ${userName}.packages = [ htpasswdWrapper ]; };
-    in mkMerge (map addWrapperToUser enabledUserNames);
+      addPackagesToUser = userName: {
+        ${userName}.packages =
+          [ htpasswdWrapper intake ]
+          ++ intakeCfg.extraPackages
+          ++ intakeCfg.users.${userName}.extraPackages;
+      };
+    in mkMerge (map addPackagesToUser enabledUserNames);
 
     # Define a user service for each configured user
     systemd.services =
@@ -105,7 +116,7 @@ in {
         "intake@${userName}" = {
           description = "Intake service for user ${userName}";
           script = "${runScript userName}";
-          path = userCfg.packages;
+          path = intakeCfg.extraPackages ++ userCfg.extraPackages;
           serviceConfig = {
             User = userName;
             Type = "simple";
