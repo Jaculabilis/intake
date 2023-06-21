@@ -7,22 +7,13 @@ import json
 import os
 import time
 
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
+from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, current_app
 
+from intake.core import intake_data_dir
 from intake.source import LocalSource, execute_action, Item
 
 # Globals
 app = Flask(__name__)
-
-
-def intake_data_dir() -> Path:
-    if intake_data := os.environ.get("INTAKE_DATA"):
-        return Path(intake_data)
-    if xdg_data_home := os.environ.get("XDG_DATA_HOME"):
-        return Path(xdg_data_home) / "intake"
-    if home := os.environ.get("HOME"):
-        return Path(home) / ".local" / "share" / "intake"
-    raise Exception("No intake data directory defined")
 
 
 def item_sort_key(item: Item):
@@ -71,7 +62,7 @@ def auth_check(route):
 
     @wraps(route)
     def _route(*args, **kwargs):
-        data_path = intake_data_dir()
+        data_path: Path = current_app.config["INTAKE_DATA"]
         auth_path = data_path / "credentials.json"
         if auth_path.exists():
             if not request.authorization:
@@ -92,7 +83,7 @@ def root():
     """
     Navigation home page.
     """
-    data_path = intake_data_dir()
+    data_path: Path = current_app.config["INTAKE_DATA"]
 
     sources = []
     for child in data_path.iterdir():
@@ -118,7 +109,8 @@ def source_feed(name):
     """
     Feed view for a single source.
     """
-    source = LocalSource(intake_data_dir(), name)
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source = LocalSource(data_path, name)
     if not source.source_path.exists():
         abort(404)
 
@@ -131,13 +123,14 @@ def channel_feed(name):
     """
     Feed view for a channel.
     """
-    channels_config_path = intake_data_dir() / "channels.json"
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    channels_config_path = data_path / "channels.json"
     if not channels_config_path.exists():
         abort(404)
     channels = json.loads(channels_config_path.read_text(encoding="utf8"))
     if name not in channels:
         abort(404)
-    sources = [LocalSource(intake_data_dir(), name) for name in channels[name]]
+    sources = [LocalSource(data_path, name) for name in channels[name]]
 
     return _sources_feed(name, sources, show_hidden=get_show_hidden(False))
 
@@ -190,7 +183,8 @@ def _sources_feed(name: str, sources: List[LocalSource], show_hidden: bool):
 @app.delete("/item/<string:source_name>/<string:item_id>")
 @auth_check
 def deactivate(source_name, item_id):
-    source = LocalSource(intake_data_dir(), source_name)
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source = LocalSource(data_path, source_name)
     item = source.get_item(item_id)
     if item["active"]:
         print(f"Deactivating {source_name}/{item_id}")
@@ -202,7 +196,8 @@ def deactivate(source_name, item_id):
 @app.patch("/item/<string:source_name>/<string:item_id>")
 @auth_check
 def update(source_name, item_id):
-    source = LocalSource(intake_data_dir(), source_name)
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source = LocalSource(data_path, source_name)
     item = source.get_item(item_id)
     params = request.get_json()
     if "tts" in params:
@@ -217,13 +212,14 @@ def update(source_name, item_id):
 @app.post("/mass-deactivate/")
 @auth_check
 def mass_deactivate():
+    data_path: Path = current_app.config["INTAKE_DATA"]
     params = request.get_json()
     if "items" not in params:
         print(f"Bad request params: {params}")
     for info in params.get("items"):
         source = info["source"]
         itemid = info["itemid"]
-        source = LocalSource(intake_data_dir(), source)
+        source = LocalSource(data_path, source)
         item = source.get_item(itemid)
         if item["active"]:
             print(f"Deactivating {info['source']}/{info['itemid']}")
@@ -235,7 +231,8 @@ def mass_deactivate():
 @app.post("/action/<string:source_name>/<string:item_id>/<string:action>")
 @auth_check
 def action(source_name, item_id, action):
-    source = LocalSource(intake_data_dir(), source_name)
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source = LocalSource(data_path, source_name)
     item = execute_action(source, item_id, action)
     return jsonify(item)
 
@@ -246,7 +243,8 @@ def source_edit(name):
     """
     Config editor for a source
     """
-    source = LocalSource(intake_data_dir(), name)
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source = LocalSource(data_path, name)
     if not source.source_path.exists():
         abort(404)
 
@@ -301,7 +299,8 @@ def channels_edit():
     """
     Config editor for channels
     """
-    config_path = intake_data_dir() / "channels.json"
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    config_path = data_path / "channels.json"
 
     # For POST, check if the config is valid
     error_message: str = None
@@ -350,7 +349,8 @@ def _parse_channels_config(config_str: str):
 @auth_check
 def add_item():
     # Ensure the default source exists
-    source_path = intake_data_dir() / "default"
+    data_path: Path = current_app.config["INTAKE_DATA"]
+    source_path = data_path / "default"
     if not source_path.exists():
         source_path.mkdir()
     config_path = source_path / "intake.json"
@@ -390,5 +390,5 @@ def _get_ttx_for_date(dt: datetime) -> int:
 
 
 def wsgi():
-    # init_default_logging()
+    app.config["INTAKE_DATA"] = intake_data_dir()
     return app

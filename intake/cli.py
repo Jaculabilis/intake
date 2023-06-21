@@ -10,15 +10,10 @@ import pwd
 import subprocess
 import sys
 
+from intake.core import intake_data_dir
 from intake.source import fetch_items, LocalSource, update_items, execute_action
 from intake.types import InvalidConfigException, SourceUpdateException
 
-
-def intake_data_dir() -> Path:
-    home = Path(os.environ["HOME"])
-    data_home = Path(os.environ.get("XDG_DATA_HOME", home / ".local" / "share"))
-    intake_data = data_home / "intake"
-    return intake_data
 
 
 def cmd_edit(cmd_args):
@@ -30,7 +25,6 @@ def cmd_edit(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory",
     )
     parser.add_argument(
@@ -40,14 +34,14 @@ def cmd_edit(cmd_args):
         help="Source name to edit",
     )
     args = parser.parse_args(cmd_args)
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
 
     editor_cmd = os.environ.get("EDITOR")
     if not editor_cmd:
         print("Cannot edit, no EDITOR set")
         return 1
 
-    data = Path(args.data)
-    source_path: Path = data / args.source
+    source_path: Path = data_path / args.source
     if not source_path.exists():
         yn = input("Source does not exist, create? [yN] ")
         if yn.strip().lower() != "y":
@@ -69,7 +63,7 @@ def cmd_edit(cmd_args):
             )
 
     # Make a copy of the config
-    source = LocalSource(data, args.source)
+    source = LocalSource(data_path, args.source)
     tmp_path = source.source_path / "intake.json.tmp"
     tmp_path.write_text(json.dumps(source.get_config(), indent=2))
 
@@ -102,7 +96,6 @@ def cmd_update(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory containing source directories",
     )
     parser.add_argument(
@@ -118,7 +111,8 @@ def cmd_update(cmd_args):
     )
     args = parser.parse_args(cmd_args)
 
-    source = LocalSource(Path(args.data), args.source)
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
+    source = LocalSource(data_path, args.source)
     try:
         items = fetch_items(source)
         if not args.dry_run:
@@ -147,7 +141,6 @@ def cmd_action(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory containing source directories",
     )
     parser.add_argument(
@@ -170,7 +163,8 @@ def cmd_action(cmd_args):
     )
     args = parser.parse_args(cmd_args)
 
-    source = LocalSource(Path(args.data), args.source)
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
+    source = LocalSource(data_path, args.source)
     try:
         item = execute_action(source, args.item, args.action, 5)
         print("Item:", item)
@@ -202,7 +196,6 @@ def cmd_feed(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory",
     )
     parser.add_argument(
@@ -211,21 +204,20 @@ def cmd_feed(cmd_args):
         nargs="+",
         help="Limit feed to these sources",
     )
-    parser.add_argument
     args = parser.parse_args(cmd_args)
 
-    data = Path(args.data)
-    if not data.exists() and data.is_dir():
-        print("Not a directory:", data)
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
+    if not data_path.exists() and data_path.is_dir():
+        print("Not a directory:", data_path)
         return 1
 
     if not args.sources:
-        args.sources = [child.name for child in data.iterdir()]
+        args.sources = [child.name for child in data_path.iterdir()]
 
     sources = [
-        LocalSource(data, name)
+        LocalSource(data_path, name)
         for name in args.sources
-        if (data / name / "intake.json").exists()
+        if (data_path / name / "intake.json").exists()
     ]
     items = sorted(
         [item for source in sources for item in source.get_all_items()],
@@ -275,7 +267,6 @@ def cmd_passwd(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory",
     )
     args = parser.parse_args(cmd_args)
@@ -285,7 +276,8 @@ def cmd_passwd(cmd_args):
         print("Could not find htpasswd, cannot update password")
         return 1
 
-    creds = Path(args.data) / "credentials.json"
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
+    creds = Path(data_path) / "credentials.json"
     if not creds.parent.exists():
         creds.parent.mkdir(parents=True)
 
@@ -313,20 +305,18 @@ def cmd_run(cmd_args):
     parser.add_argument(
         "--data",
         "-d",
-        default=intake_data_dir(),
         help="Path to the intake data directory containing source directories",
     )
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args(cmd_args)
 
-    # Hack: the web server isn't wired up to take this configuration value
-    # directly, but it will work to stuff it  into the first env checked
-    os.environ["INTAKE_DATA"] = str(args.data)
-
+    data_path: Path = Path(args.data) if args.data else intake_data_dir()
     try:
         from intake.app import app
 
+        app.config["INTAKE_DATA"] = data_path
+        print(app.config)
         app.run(port=args.port, debug=args.debug)
         return 0
     except Exception as ex:
