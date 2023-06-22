@@ -25,6 +25,15 @@ from intake.source import LocalSource, execute_action, Item
 app = Flask(__name__)
 
 
+CRON_HELPTEXT = """cron spec:
+*  *  *  *  *
++-------------- minute (0 - 59)
+   +----------- hour (0 - 23)
+      +-------- day of month (1 - 31)
+         +----- month (1 - 12)
+            +-- day of week (0 Sun - 6 Sat)"""
+
+
 def item_sort_key(item: Item):
     return item.sort_key
 
@@ -276,6 +285,7 @@ def source_edit(name):
         subtitle=source.source_name,
         config=config_str,
         error_message=error_message,
+        helptext=CRON_HELPTEXT,
     )
 
 

@@ -334,7 +334,6 @@ def cmd_run(cmd_args):
         from intake.app import app
 
         app.config["INTAKE_DATA"] = data_path
-        print(app.config)
         app.run(port=args.port, debug=args.debug)
         return 0
     except Exception as ex:

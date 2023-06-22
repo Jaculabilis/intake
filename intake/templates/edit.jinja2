@@ -79,6 +79,10 @@ span.error-message {
 {% endif %}
 </p>
 </form>
+{% if helptext -%}
+<pre>{{ helptext }}
+</pre>
+{%- endif %}
 </article>
 
 </main>
