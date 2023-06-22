@@ -41,17 +41,20 @@ intake
   },
   "env": {
     "...": "..."
-  }
+  },
+  "cron": "* * * * *"
 }
 ```
 
-Each key under `action` defines an action that can be taken for the source. `action` must be present with a `fetch` action. `env` is optional.
+Each key under `action` defines an action that can be taken for the source. A minimal `intake.json` must contain a `fetch` action with an `exe`. All other configs are optional.
+
+The `fetch` action is executed by `intake update`. All other actions are executable with `intake action`. `intake crontab` will create a crontab entry for each source with a `cron` config defined. The value of `cron` is the crontab spec according to which the source should be updated.
 
 ## Interface for source programs
 
-Intake interacts with sources by executing the actions defined in the source's `intake.json`. The `fetch` action is required and used to check for new feed items.
+Intake interacts with sources by executing the actions defined in the source's `intake.json`. The `fetch` action is required and used to check for new feed items when `intake update` is executed.
 
-When any action is executed, intake executes the `exe` program for the action with the corresponding `args` as arguments. The process's working directory is set to the source's folder, i.e. the folder containing `intake.json`. The process's environment is as follows:
+To execute an action, intake executes the `exe` program for the action with the corresponding `args` (if present) as arguments. The process's working directory is set to the source's folder, i.e. the folder containing `intake.json`. The process's environment is as follows:
 
 * intake's environment is inherited.
 * `STATE_PATH` is set to the absolute path of `state`.

@@ -7,7 +7,16 @@ import json
 import os
 import time
 
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, current_app
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    abort,
+    redirect,
+    url_for,
+    current_app,
+)
 
 from intake.core import intake_data_dir
 from intake.source import LocalSource, execute_action, Item

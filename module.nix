@@ -74,7 +74,7 @@ in {
     intakeDir = "/etc/intake";
     intakePwd = "${intakeDir}/htpasswd";
   in {
-    # Apply the overlay so intake is included inpkgs.
+    # Apply the overlay so intake is included in pkgs.
     nixpkgs.overlays = [ flake.overlays.default ];
 
     # Define a user group for access to the htpasswd file. nginx needs to be able to read it.
@@ -104,6 +104,9 @@ in {
           ++ intakeCfg.users.${userName}.extraPackages;
       };
     in mkMerge (map addPackagesToUser enabledUserNames);
+
+    # Enable cron
+    services.cron.enable = true;
 
     # Define a user service for each configured user
     systemd.services =

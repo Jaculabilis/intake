@@ -8,16 +8,15 @@
     isNormalUser = true;
     password = "alpha";
     uid = 1000;
+    packages = [ pkgs.intake ];
   };
 
   users.users.bob = {
     isNormalUser = true;
     password = "beta";
     uid  = 1001;
+    packages = [ pkgs.intake ];
   };
-
-  # Put intake on both users' PATH
-  environment.systemPackages = [ pkgs.intake ];
 
   # Set up intake for both users with an entry point at port 8080
   services.intake = {
