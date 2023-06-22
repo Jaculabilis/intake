@@ -299,6 +299,8 @@ def _parse_source_config(config_str: str):
     config = {"action": parsed["action"]}
     if "env" in parsed:
         config["env"] = parsed["env"]
+    if "cron" in parsed:
+        config["cron"] = parsed["cron"]
     return (None, config)
 
 
