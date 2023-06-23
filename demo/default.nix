@@ -67,19 +67,21 @@
 
   # Include some demo instructions
   environment.etc.issue.text = ''
+    ###
     # Welcome to the intake demo! Log in as `alice` with password `alpha` to begin.
-
+    #
     # Exit the VM with ctrl+a x, or switch to the qemu console with ctrl+a c and `quit`.
-
+    ###
   '';
   users.motd = ''
-
+    ###
     # To set a password for the web interface, run `intake passwd` and set a password.
-
+    #
     # Within this demo VM, the main intake entry point can be found at localhost:8080. This is also exposed on the host machine at localhost:5234. After you set a password, navigate to localhost:5234 on your host machine and log in to see the web interface.
-
-    # Try updating the currenttime source by running `intake update -s currenttime`. You should see a new item after refreshing the source's feed.
-
-    # The `echo` source demonstrates the use of `env` source configuration. Try changing the message in the web interface or via `intake edit -s echo`, then updating the source.
+    #
+    # Try updating the `echo` source by running `intake update -s echo`. You should see a new item after refreshing the source's feed. This source uses `env` source configuration, so use `intake edit -s echo` or the web interface to change the message, then update the source again.
+    #
+    # Updating a source will also trigger intake to update the user crontab. If you run `crontab -l`, you should see that the `currenttime` source has a crontab entry. You can change this source's cron schedule in the source config.
+    ###
   '';
 }

@@ -112,6 +112,8 @@ in {
     systemd.services =
     let
       runScript = userName: pkgs.writeShellScript "intake-run.sh" ''
+        # Add the setuid wrapper directory so `crontab` is accessible
+        export PATH="${config.security.wrapperDir}:$PATH"
         ${pythonEnv}/bin/intake run -d /home/${userName}/.local/share/intake --port ${toString userPort.${userName}}
       '';
       # systemd service definition for a single user, given `services.intake.users.userName` = `userCfg`

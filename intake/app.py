@@ -19,6 +19,7 @@ from flask import (
 )
 
 from intake.core import intake_data_dir
+from intake.crontab import update_crontab_entries
 from intake.source import LocalSource, execute_action, Item
 
 # Globals
@@ -273,6 +274,7 @@ def source_edit(name):
         error_message, config = _parse_source_config(config_str)
         if not error_message:
             source.save_config(config)
+            update_crontab_entries(data_path)
             return redirect(url_for("root"))
 
     # For GET, load the config

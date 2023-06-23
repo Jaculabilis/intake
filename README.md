@@ -46,9 +46,11 @@ intake
 }
 ```
 
-Each key under `action` defines an action that can be taken for the source. A minimal `intake.json` must contain a `fetch` action with an `exe`. All other configs are optional.
+Each key under `action` defines an action that can be taken for the source. An action must contain `exe` and may contain `args`. A source must have a `fetch` action.
 
-The `fetch` action is executed by `intake update`. All other actions are executable with `intake action`. `intake crontab` will create a crontab entry for each source with a `cron` config defined. The value of `cron` is the crontab spec according to which the source should be updated.
+Each key under `env` defines an environment variable that will be set when actions are executed.
+
+If `cron` is present, it must define a crontab schedule. Intake will automatically create crontab entries to update each source according to its cron schedule.
 
 ## Interface for source programs
 
@@ -66,7 +68,7 @@ The `fetch` action is used to fetch the current state of the feed source. It rec
 
 An item must have a key under `action` with that action's name to support executing that action for that item. The value under that key may be any JSON structure used to manage the item-specific state.
 
-All encoding is done with UTF-8. If an item cannot be parsed or the exit code of the process is nonzero, Intake will consider the action to be a failure. No items or other feed changes will happen as a result of a failed action, except for changes to `state` done by the action process.
+All input and output is treated as UTF-8. If an item cannot be parsed or the exit code of the process is nonzero, Intake will consider the action to be a failure. No items or other feed changes will happen as a result of a failed action, except for changes to `state` done by the action process.
 
 ## Top-level item fields
 

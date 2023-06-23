@@ -82,6 +82,7 @@ def cmd_edit(cmd_args):
             return 0
 
         tmp_path.replace(source.source_path / "intake.json")
+        update_crontab_entries(data_path)
         break
 
     return 0
@@ -294,24 +295,6 @@ def cmd_passwd(cmd_args):
     new_creds = {"username": user, "secret": password}
     creds.write_text(json.dumps(new_creds, indent=2))
 
-    return 0
-
-
-def cmd_crontab(cmd_args):
-    """Update cron with configured source cron entries."""
-    parser = argparse.ArgumentParser(
-        prog="intake crontab",
-        description=cmd_crontab.__doc__,
-    )
-    parser.add_argument(
-        "--data",
-        "-d",
-        help="Path to the intake data directory containing source directories",
-    )
-    args = parser.parse_args(cmd_args)
-
-    data_path: Path = Path(args.data) if args.data else intake_data_dir()
-    update_crontab_entries(data_path)
     return 0
 
 
