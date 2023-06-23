@@ -38,7 +38,7 @@ def cmd_edit(cmd_args):
 
     editor_cmd = os.environ.get("EDITOR")
     if not editor_cmd:
-        print("Cannot edit, no EDITOR set")
+        print("Cannot edit, no EDITOR set", file=sys.stderr)
         return 1
 
     source_path: Path = data_path / args.source
@@ -119,14 +119,14 @@ def cmd_update(cmd_args):
             update_items(source, items)
         else:
             for item in items:
-                print("Item:", item._item)
+                print("Item:", item._item, file=sys.stderr)
     except InvalidConfigException as ex:
-        print("Could not fetch", args.source)
-        print(ex)
+        print("Could not fetch", args.source, file=sys.stderr)
+        print(ex, file=sys.stderr)
         return 1
     except SourceUpdateException as ex:
-        print("Error updating source", args.source)
-        print(ex)
+        print("Error updating source", args.source, file=sys.stderr)
+        print(ex, file=sys.stderr)
         return 1
 
     return 0
@@ -167,10 +167,10 @@ def cmd_action(cmd_args):
     source = LocalSource(data_path, args.source)
     try:
         item = execute_action(source, args.item, args.action, 5)
-        print("Item:", item)
+        print("Item:", item, file=sys.stderr)
     except InvalidConfigException as ex:
-        print("Could not fetch", args.source)
-        print(ex)
+        print("Could not fetch", args.source, file=sys.stderr)
+        print(ex, file=sys.stderr)
         return 1
     except SourceUpdateException as ex:
         print(
@@ -180,8 +180,9 @@ def cmd_action(cmd_args):
             args.item,
             "action",
             args.action,
+            file=sys.stderr,
         )
-        print(ex)
+        print(ex, file=sys.stderr)
         return 1
 
     return 0
@@ -208,7 +209,7 @@ def cmd_feed(cmd_args):
 
     data_path: Path = Path(args.data) if args.data else intake_data_dir()
     if not data_path.exists() and data_path.is_dir():
-        print("Not a directory:", data_path)
+        print("Not a directory:", data_path, file=sys.stderr)
         return 1
 
     if not args.sources:
@@ -273,7 +274,7 @@ def cmd_passwd(cmd_args):
 
     command_exists = subprocess.run(["command", "-v" "htpasswd"], shell=True)
     if command_exists.returncode:
-        print("Could not find htpasswd, cannot update password")
+        print("Could not find htpasswd, cannot update password", file=sys.stderr)
         return 1
 
     data_path: Path = Path(args.data) if args.data else intake_data_dir()
@@ -287,7 +288,7 @@ def cmd_passwd(cmd_args):
         ["htpasswd", "-b", "/etc/intake/htpasswd", user, password]
     )
     if update_pwd.returncode:
-        print("Could not update password file")
+        print("Could not update password file", file=sys.stderr)
         return 1
 
     new_creds = {"username": user, "secret": password}
@@ -337,7 +338,7 @@ def cmd_run(cmd_args):
         app.run(port=args.port, debug=args.debug)
         return 0
     except Exception as ex:
-        print(ex)
+        print(ex, file=sys.stderr)
         return 1
 
 

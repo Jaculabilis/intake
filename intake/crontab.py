@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import subprocess
+import sys
 
 from intake.source import LocalSource
 
@@ -27,18 +28,24 @@ def update_crontab_entries(data_path: Path):
     Update the intake-managed section of the user's crontab.
     """
     # If there is no crontab command available, quit early.
-    crontab_exists = subprocess.run(["command", "-v" "crontab"], shell=True)
+    cmd = ("command", "-v", "crontab")
+    print("Executing", *cmd, file=sys.stderr)
+    crontab_exists = subprocess.run(cmd, shell=True)
     if crontab_exists.returncode:
-        print("Could not update crontab")
+        print("Could not update crontab", file=sys.stderr)
         return
 
     # Get the current crontab
+    cmd = ["crontab", "-e"]
+    print("Executing", *cmd, file=sys.stderr)
     get_crontab = subprocess.run(
-        ["crontab", "-e"],
+        cmd,
         env={**os.environ, "EDITOR": "cat"},
         stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
     )
+    for line in get_crontab.stderr.decode("utf8").splitlines():
+        print("[stderr]", line, file=sys.stderr)
     crontab_lines = get_crontab.stdout.decode("utf-8").splitlines()
 
     # Splice the intake crons into the crontab
@@ -67,16 +74,20 @@ def update_crontab_entries(data_path: Path):
         new_crontab_lines.extend(get_desired_crons(data_path))
         new_crontab_lines.append(INTAKE_CRON_END)
 
+    print("Updating", len(new_crontab_lines) - 2, "crontab entries", file=sys.stderr)
+
     # Save the updated crontab
+    cmd = ["crontab", "-"]
+    print("Executing", *cmd, file=sys.stderr)
     new_crontab: bytes = "\n".join(new_crontab_lines).encode("utf8")
     save_crontab = subprocess.Popen(
-        ["crontab", "-"],
+        cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     (stdout, stderr) = save_crontab.communicate(new_crontab)
     for line in stdout.decode("utf8").splitlines():
-        print("[stdout]", line)
+        print("[stdout]", line, file=sys.stderr)
     for line in stderr.decode("utf8").splitlines():
-        print("[stderr]", line)
+        print("[stderr]", line, file=sys.stderr)

@@ -7,6 +7,7 @@ from typing import List
 import json
 import os
 import os.path
+import sys
 
 from intake.types import InvalidConfigException, SourceUpdateException
 
@@ -196,7 +197,7 @@ def _read_stdout(process: Popen, output: list) -> None:
     while True:
         data = process.stdout.readline()
         if data:
-            print(f"[stdout] <{repr(data)}>")
+            print(f"[stdout] <{repr(data)}>", file=sys.stderr)
             output.append(data)
         if process.poll() is not None:
             break
@@ -210,7 +211,7 @@ def _read_stderr(process: Popen) -> None:
     while True:
         data = process.stderr.readline()
         if data:
-            print(f"[stderr] <{repr(data)}>")
+            print(f"[stderr] <{repr(data)}>", file=sys.stderr)
         if process.poll() is not None:
             break
 
@@ -330,7 +331,7 @@ def update_items(source: LocalSource, fetched_items: List[Item]):
     """
     # Get a list of item ids that already existed for this source.
     prior_ids = source.get_item_ids()
-    print(f"Found {len(prior_ids)} prior items")
+    print(f"Found {len(prior_ids)} prior items", file=sys.stderr)
 
     # Determine which items are new and which are updates.
     new_items: List[Item] = []
@@ -364,4 +365,4 @@ def update_items(source: LocalSource, fetched_items: List[Item]):
             source.delete_item(item_id)
             del_count += 1
 
-    print(len(new_items), "new,", del_count, "deleted")
+    print(len(new_items), "new,", del_count, "deleted", file=sys.stderr)

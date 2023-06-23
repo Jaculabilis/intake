@@ -4,7 +4,7 @@ from pathlib import Path
 from random import getrandbits
 from typing import List
 import json
-import os
+import sys
 import time
 
 from flask import (
@@ -205,7 +205,7 @@ def deactivate(source_name, item_id):
     source = LocalSource(data_path, source_name)
     item = source.get_item(item_id)
     if item["active"]:
-        print(f"Deactivating {source_name}/{item_id}")
+        print(f"Deactivating {source_name}/{item_id}", file=sys.stderr)
     item["active"] = False
     source.save_item(item)
     return jsonify({"active": item["active"]})
@@ -233,14 +233,14 @@ def mass_deactivate():
     data_path: Path = current_app.config["INTAKE_DATA"]
     params = request.get_json()
     if "items" not in params:
-        print(f"Bad request params: {params}")
+        print(f"Bad request params: {params}", file=sys.stderr)
     for info in params.get("items"):
         source = info["source"]
         itemid = info["itemid"]
         source = LocalSource(data_path, source)
         item = source.get_item(itemid)
         if item["active"]:
-            print(f"Deactivating {info['source']}/{info['itemid']}")
+            print(f"Deactivating {info['source']}/{info['itemid']}", file=sys.stderr)
         item["active"] = False
         source.save_item(item)
     return jsonify({})
