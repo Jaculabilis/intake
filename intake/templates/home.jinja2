@@ -59,7 +59,15 @@ summary:focus {
 <p>No sources found.</p>
 {% else %}
 {% for source in sources %}
-<p><a href="{{ url_for('source_feed', name=source.source_name) }}">{{ source.source_name|safe }}</a> (<a href="{{ url_for('source_edit', name=source.source_name) }}">edit</a>)</p>
+<p>
+{%- for channel, srcs in channels|items -%}
+{%- if source.source_name in srcs -%}
+^
+{%- endif -%}
+{%- endfor -%}
+<a href="{{ url_for('source_feed', name=source.source_name) }}">{{ source.source_name|safe }}</a>
+(<a href="{{ url_for('source_edit', name=source.source_name) }}">edit</a>)
+</p>
 {% endfor %}
 {% endif %}
 </details>
@@ -70,19 +78,15 @@ summary:focus {
 <summary><span class="item-title">Add item</span></summary>
 <form action="add" method="post">
 <p>
-{# <label for="title">Title</label> #}
 <input type="text" name="title" class="wide" placeholder="Title">
 </p>
 <p>
-{# <label for="link">Link</label> #}
 <input type="url" name="link" class="wide" placeholder="Link">
 </p>
 <p>
-{# <label for="body">Body</label> #}
 <textarea name="body" class="wide" placeholder="Body"></textarea>
 </p>
 <p>
-{# <label for="tags">Tags</label> #}
 <input type="text" name="tags" class="wide" placeholder="Tags, comma-separated">
 </p>
 <p>
