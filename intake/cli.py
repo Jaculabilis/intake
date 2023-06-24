@@ -82,7 +82,10 @@ def cmd_edit(cmd_args):
             return 0
 
         tmp_path.replace(source.source_path / "intake.json")
-        update_crontab_entries(data_path)
+
+        # Assume that --data is for local testing and don't update crontab
+        if not args.data:
+            update_crontab_entries(data_path)
         break
 
     return 0
