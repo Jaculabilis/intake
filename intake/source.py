@@ -233,9 +233,10 @@ def _execute_source_action(
         raise InvalidConfigException(f"No exe for action {action}")
 
     command = [action_cfg["exe"], *action_cfg.get("args", [])]
+    config_env = {key: str(value) for key, value in config.get("env", {}).items()}
     env = {
         **os.environ.copy(),
-        **config.get("env", {}),
+        **config_env,
         "STATE_PATH": str(source.get_state_path()),
     }
 
