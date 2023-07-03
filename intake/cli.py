@@ -122,8 +122,9 @@ def cmd_update(cmd_args):
         if not args.dry_run:
             update_items(source, items)
         else:
+            print("Update returned", len(items), "items:")
             for item in items:
-                print("Item:", item._item, file=sys.stderr)
+                print("  Item:", item._item, file=sys.stderr)
     except InvalidConfigException as ex:
         print("Could not fetch", args.source, file=sys.stderr)
         print(ex, file=sys.stderr)

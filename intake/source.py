@@ -197,7 +197,7 @@ def _read_stdout(process: Popen, output: list) -> None:
     while True:
         data = process.stdout.readline()
         if data:
-            print(f"[stdout] <{repr(data)}>", file=sys.stderr)
+            print(f"[stdout] {data.rstrip()}", file=sys.stderr)
             output.append(data)
         if process.poll() is not None:
             break
@@ -211,7 +211,7 @@ def _read_stderr(process: Popen) -> None:
     while True:
         data = process.stderr.readline()
         if data:
-            print(f"[stderr] <{repr(data)}>", file=sys.stderr)
+            print(f"[stderr] {data.rstrip()}", file=sys.stderr)
         if process.poll() is not None:
             break
 

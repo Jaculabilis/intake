@@ -72,8 +72,10 @@
     #
     # Exit the VM with ctrl+a x, or switch to the qemu console with ctrl+a c and `quit`.
     ###
+
   '';
   users.motd = ''
+
     ###
     # To set a password for the web interface, run `intake passwd` and set a password.
     #
@@ -83,5 +85,6 @@
     #
     # Updating a source will also trigger intake to update the user crontab. If you run `crontab -l`, you should see that the `currenttime` source has a crontab entry. You can change this source's cron schedule in the source config.
     ###
+
   '';
 }
